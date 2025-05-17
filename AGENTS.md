@@ -33,6 +33,7 @@
   prisma/    – schema.prisma & migrations
   template/  – seed user‑generated site
   project_description/ – architecture & implementation docs
+  .env – environment variables
   ```
 * **Preview serving:** static `dist/` under `/preview/<project_id>/`.
 * **Single browser origin:** In dev, Vite (5173) proxies `/api` & `/preview` to backend (3000); in prod backend serves built SPA.
@@ -130,3 +131,4 @@
 
 ## Other rules
 - Refer to the files in project_description/ and update as we go along but DON'T update design_decisions.md or functional_description.md.
+- Make sure to not get confused about this being a code gen applicaiton. The projects created by the users / template should not be consused with this web app that we are building to generate websites.
