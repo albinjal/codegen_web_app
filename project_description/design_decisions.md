@@ -1,4 +1,3 @@
-<!--- AGENT INGORE THIS FILE, USED ONLY FOR HUMAN READING --->
 # Design Decisions
 
 To me, one of the most intersting parts of a coding project is the design decisions.
