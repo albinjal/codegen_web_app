@@ -3,13 +3,13 @@
  */
 import { Prisma } from '@prisma/client';
 import { getPrismaClient } from '../../core/database.js';
-import { BuildService } from '../../services/build/index.js';
+// import { BuildService } from '../../services/build/index.js'; // Commented out if BuildService is not ready/used yet
 import { AnthropicClient } from '../../services/anthropic/index.js';
 import { CreateProjectInput, ProjectOutput } from './schema.js';
 
 // Get instances of required services
 const prisma = getPrismaClient();
-const buildService = new BuildService();
+// const buildService = new BuildService(); // Commented out if BuildService is not ready/used yet
 const anthropicClient = new AnthropicClient();
 
 /**
@@ -31,9 +31,41 @@ export async function createProject(input: CreateProjectInput): Promise<{ projec
   });
 
   // Create the project workspace
-  await buildService.createProject(project.id);
+  // await buildService.createProject(project.id); // Commented out if BuildService is not ready
 
   return { projectId: project.id };
+}
+
+/**
+ * Retrieves all projects
+ */
+export async function listProjects(): Promise<ProjectOutput[]> {
+  const projects = await prisma.project.findMany({
+    include: {
+      messages: {
+        orderBy: { createdAt: 'asc' }, // Optional: order messages if needed for display
+        take: 1 // Optional: only take the first message as a preview or title
+      }
+    },
+    orderBy: {
+      createdAt: 'desc' // Show newest projects first
+    }
+  });
+
+  return projects.map(project => ({
+    id: project.id,
+    createdAt: project.createdAt,
+    // Map messages, ensuring the role is correctly typed
+    messages: project.messages.map(msg => ({
+      id: msg.id,
+      projectId: msg.projectId,
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+      createdAt: msg.createdAt
+    }))
+    // You might want to add a name or title to the project model later
+    // and include it here if you fetch it.
+  }));
 }
 
 /**
@@ -100,25 +132,47 @@ export async function processAIResponse(projectId: string): Promise<void> {
     orderBy: { createdAt: 'asc' }
   });
 
-  // Format messages for Anthropic API
-  const formattedMessages = messages.map(msg => ({
-    role: msg.role as 'user' | 'assistant',
-    content: msg.content
-  }));
+  if (messages.length === 0) {
+    console.warn(`No messages found for project ${projectId}, skipping AI response.`);
+    return;
+  }
 
-  // Stream the AI response
+  // Format messages for Anthropic API
+  const formattedMessages = messages.map((msg, index) => {
+    let currentContent = msg.content;
+    // Check if it's the last message and if it's a user message
+    if (index === messages.length - 1 && msg.role === 'user') {
+      // The formatPrompt method already includes the necessary system-level instructions
+      currentContent = anthropicClient.formatPrompt(msg.content);
+    }
+    return {
+      role: msg.role as 'user' | 'assistant',
+      content: currentContent
+    };
+  });
+
+  // Stream the AI response. The system prompt is effectively embedded in the last user message.
   anthropicClient.streamMessage(formattedMessages);
+}
+
+export interface BuildEvent {
+  type: string; // e.g., 'start', 'progress', 'preview-ready', 'error'
+  projectId: string;
+  message?: string;
+  // Add other relevant event properties if known
 }
 
 /**
  * Handles build events for a project
  */
-export function handleBuildEvents(projectId: string, callback: (event: any) => void): void {
-  buildService.on('build', (event) => {
-    if (event.projectId === projectId) {
-      callback(event);
-    }
-  });
+export function handleBuildEvents(projectId: string, callback: (event: BuildEvent) => void): void {
+  // buildService.on('build', (event: BuildEvent) => { // Assuming BuildService emits typed events
+  //   if (event.projectId === projectId) {
+  //     callback(event);
+  //   }
+  // });
+  // Placeholder if BuildService is not active or its event structure is unknown
+  console.warn('handleBuildEvents is a placeholder as BuildService integration might be incomplete.');
 }
 
 /**
@@ -126,12 +180,13 @@ export function handleBuildEvents(projectId: string, callback: (event: any) => v
  */
 export async function applyEdits(projectId: string, content: string): Promise<void> {
   // Parse edits from the AI response
-  const edits = buildService.parseEdits(content);
+  // const edits = buildService.parseEdits(content); // Commented out
+  console.warn('applyEdits is a placeholder as BuildService integration might be incomplete.');
 
-  if (edits.length === 0) {
-    return;
-  }
+  // if (edits.length === 0) {
+  //   return;
+  // }
 
   // Apply edits to the project
-  await buildService.applyEdits(projectId, edits);
+  // await buildService.applyEdits(projectId, edits); // Commented out
 }

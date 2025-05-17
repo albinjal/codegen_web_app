@@ -34,15 +34,23 @@ export class AnthropicClient extends EventEmitter {
   ): Promise<void> {
     try {
       // Format messages for the completions API
-      const prompt = this.formatMessagesForCompletions(messages);
-      const system = systemPrompt || 'You are a helpful assistant that generates website code based on user descriptions.';
+      const AImessages = this.formatMessagesForCompletions(messages);
+
+      let finalPromptString = AImessages;
+      if (systemPrompt && systemPrompt.trim() !== '') {
+        finalPromptString = `${systemPrompt}\n\n${AImessages}`;
+      } else {
+        // If no systemPrompt is provided (e.g. because instructions are in `messages`),
+        // ensure the formatMessagesForCompletions handles the structure.
+        // The formatMessagesForCompletions already appends "Assistant:" so it should be ready.
+      }
 
       // Stream the completions API response
       const stream = await this.client.completions.create({
         model: MODEL_CONFIG.model,
         max_tokens_to_sample: MODEL_CONFIG.maxTokens,
         temperature: MODEL_CONFIG.temperature,
-        prompt: `${system}\n\n${prompt}`,
+        prompt: finalPromptString,
         stream: true,
       });
 

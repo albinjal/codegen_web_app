@@ -2,11 +2,13 @@ import Fastify, { FastifyInstance } from 'fastify';
 import fastifyCors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { join } from 'path';
+import { EventEmitter } from 'events';
 import { env } from '../config/env.js';
 import { router } from '../routes/index.js';
 import { BuildService } from '../services/build/index.js';
 import { AnthropicClient } from '../services/anthropic/index.js';
 import { getPrismaClient } from './database.js';
+import { ZodTypeProvider, serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 // Extend Fastify types to include our service decorators
 declare module 'fastify' {
@@ -14,6 +16,7 @@ declare module 'fastify' {
     buildService: BuildService;
     anthropicClient: AnthropicClient;
     prisma: ReturnType<typeof getPrismaClient>;
+    serverEvents: EventEmitter;
   }
 }
 
@@ -21,12 +24,14 @@ declare module 'fastify' {
  * Creates and configures a Fastify server instance
  */
 export function createServer(): FastifyInstance {
-  // Initialize Fastify server
+  // Initialize Fastify server with Zod type provider
   const server = Fastify({
     logger: true,
-  });
+  }).withTypeProvider<ZodTypeProvider>()
+    .setValidatorCompiler(validatorCompiler)
+    .setSerializerCompiler(serializerCompiler);
 
-  return server;
+  return server as FastifyInstance;
 }
 
 /**
@@ -49,6 +54,7 @@ export async function setupServer(server: FastifyInstance): Promise<void> {
   server.decorate('buildService', new BuildService());
   server.decorate('anthropicClient', new AnthropicClient());
   server.decorate('prisma', getPrismaClient());
+  server.decorate('serverEvents', new EventEmitter());
 
   // Register all routes
   await server.register(router);
