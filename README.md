@@ -7,9 +7,11 @@ A web application that allows users to generate websites using AI.
 This is a monorepo with the following workspaces:
 
 - `backend`: Fastify server handling API requests and preview serving
+  - `src`: Source code with modular architecture
+  - `template`: React template used for new projects
+  - `workspace`: Runtime storage for user-generated projects
 - `frontend`: React SPA using Vite, Tailwind, and shadcn/ui
 - `prisma`: Database models and migrations
-- `workspace`: Runtime storage for user-generated projects (gitignored)
 
 ## Getting Started
 
@@ -66,3 +68,5 @@ npm run start
 ```
 
 ## Architecture
+
+For detailed architecture information, see the [architecture documentation](./project_description/architecture.md).

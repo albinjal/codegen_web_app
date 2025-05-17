@@ -51,7 +51,18 @@ export async function getProject(projectId: string): Promise<ProjectOutput> {
     throw new Error(`Project with ID ${projectId} not found`);
   }
 
-  return project;
+  // Transform the response to match the expected schema
+  return {
+    id: project.id,
+    createdAt: project.createdAt,
+    messages: project.messages.map(msg => ({
+      id: msg.id,
+      projectId: msg.projectId,
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+      createdAt: msg.createdAt
+    }))
+  };
 }
 
 /**

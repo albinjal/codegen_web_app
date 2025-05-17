@@ -17,7 +17,13 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   // Create a new project
   fastify.post('/', {
     schema: {
-      body: createProjectSchema
+      body: {
+        type: 'object',
+        required: ['initialPrompt'],
+        properties: {
+          initialPrompt: { type: 'string', minLength: 1 }
+        }
+      }
     }
   }, async (request, reply) => {
     const input = request.body as CreateProjectInput;

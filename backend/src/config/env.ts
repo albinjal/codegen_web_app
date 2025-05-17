@@ -53,7 +53,7 @@ export const env: EnvironmentConfig = {
   PORT: parseInt(getOptionalEnv('PORT', '3000'), 10),
   HOST: getOptionalEnv('HOST', '0.0.0.0'),
   ANTHROPIC_API_KEY: getOptionalEnv('ANTHROPIC_API_KEY', ''),
-  CLAUDE_MODEL: getOptionalEnv('CLAUDE_MODEL', 'claude-3-5-sonnet-latest'),
+  CLAUDE_MODEL: getOptionalEnv('CLAUDE_MODEL', 'claude-3-5-sonnet-20240620'),
   WORKSPACE_DIR: getOptionalEnv('WORKSPACE_DIR', 'workspace'),
   TEMPLATE_DIR: getOptionalEnv('TEMPLATE_DIR', 'template'),
   BUILD_TIMEOUT_MS: parseInt(getOptionalEnv('BUILD_TIMEOUT_MS', '30000'), 10),

@@ -1,10 +1,10 @@
-# Architecture (Static Build, Split Repos)
+# Architecture (Refactored Modular Backend)
 
 > **Target:** Local‑only MVP, no authentication, single‑origin UX.
 
 ---
 
-## 1  High‑Level Topology
+## 1  High‑Level Topology
 
 ### Development
 
@@ -15,7 +15,7 @@
 └──────────┬───────────┘                                   │
            │  /api  /preview (proxy)                       │
            ▼                                               │
-┌──────────────────────┐   SSE streams     (port 3000)     │
+┌──────────────────────┐   SSE streams     (port 3000)     │
 │  Fastify backend     │◄──────────────────────────────────┘
 │  – REST /api         │
 │  – /preview/static   │
@@ -38,25 +38,51 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
 
 ---
 
+## 2  Project Structure
+
+```
+📁 backend/               # Backend TypeScript Node.js server
+  📁 src/
+    📁 config/            # Configuration and environment variables
+    📁 core/              # Core server and database components
+    📁 modules/           # Feature modules with controller-route pattern
+      📁 health/          # Health check module
+      📁 projects/        # Project management module
+    📁 routes/            # Route registration
+    📁 services/          # Core services
+      📁 anthropic/       # AI service integration
+      📁 build/           # Project build and file management
+    📁 utils/             # Shared utility functions
+  📁 template/            # React template for new projects
+  📁 workspace/           # Generated project workspaces
+  📄 index.ts             # Server entry point
+  📄 package.json         # Backend dependencies
+
+📁 frontend/              # Frontend React application
+  📄 package.json         # Frontend dependencies
+
+📁 prisma/                # Database schema and client
+  📄 schema.prisma        # Database model definitions
+```
 
 `backend/` and `frontend/` are independent npm workspaces with their own package.json files and .gitignore files.
 
 ---
 
-## 3  Components & Responsibilities
+## 3  Components & Responsibilities
 
 | Layer               | Responsibility                                                              | Key Tech                         |
 | ------------------- | --------------------------------------------------------------------------- | -------------------------------- |
 | **Frontend**        | Chat UI, project list, iframe preview; dev‑time proxy                       | React, Vite, Tailwind, shadcn/ui |
-| **Backend API**     | `/api/*` routes, SSE, static preview + SPA serving                          | Fastify 4, @fastify/static, zod  |
+| **Backend API**     | `/api/*` routes, SSE, static preview + SPA serving                          | Fastify 4, @fastify/static, zod  |
 | **BuildService**    | Parse `<edit>` XML, write files, execute `vite build`, emit `preview‑ready` | `execa`, chokidar (optional)     |
 | **AnthropicClient** | Wrap TS SDK, stream tokens                                                  | `@anthropic-ai/sdk`              |
 | **Database**        | Store Project & Message rows                                                | Prisma + SQLite                  |
-| **Workspace FS**    | `./workspace/{project_id}` with `template/` source + `dist/` build          | Local filesystem                 |
+| **Workspace FS**    | `backend/workspace/{project_id}` with React project files + `dist/` build   | Local filesystem                 |
 
 ---
 
-## 4  Data Model (Prisma excerpt)
+## 4  Data Model (Prisma excerpt)
 
 ```prisma
 model Project {
@@ -77,12 +103,11 @@ model Message {
 
 ---
 
-## 5  Runtime Flow
+## 5  Runtime Flow
 
 1. **Create project** – Frontend `POST /api/projects` with `{ initialPrompt }`.
 2. Backend:
-
-   1. Makes workspace dir from template.
+   1. Makes workspace dir from the backend/template.
    2. Saves user message in DB.
    3. Sends prompt to Anthropic; streams assistant tokens ↦ SSE.
    4. Runs initial `vite build` → `workspace/{id}/dist`.
@@ -91,14 +116,34 @@ model Message {
 
 ---
 
-## 6  HTTP Surface
+## 6  HTTP Surface
 
 | Method | Path                         | Purpose                               |
 | ------ | ---------------------------- | ------------------------------------- |
+| `GET`  | `/api/health`                | Health check endpoint                 |
 | `POST` | `/api/projects`              | Create project & first AI round (SSE) |
-| `POST` | `/api/projects/:id/messages` | Subsequent user message (SSE)         |
-| `GET`  | `/api/projects/:id`          | Metadata + messages                   |
+| `GET`  | `/api/projects/:id`          | Get project metadata + messages       |
+| `POST` | `/api/projects/:id/messages` | Send user message and get AI response |
 | `GET`  | `/preview/:id/*`             | Static preview files                  |
 
+---
+
+## 7  Module Structure
+
+Each feature module follows this structure:
+
+```
+📁 module-name/
+  📄 controller.ts    # Business logic and data access
+  📄 route.ts         # HTTP route definitions
+  📄 schema.ts        # Data validation with Zod
+  📄 index.ts         # Exports all module components
+```
+
+This structure promotes:
+- **Separation of concerns**: Routes handle HTTP, controllers handle business logic
+- **Testability**: Controllers can be tested without HTTP overhead
+- **Maintainability**: Clear boundaries between different aspects of functionality
+- **Scalability**: Easy to add new modules following the same pattern
 
 ---

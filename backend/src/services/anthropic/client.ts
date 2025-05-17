@@ -33,22 +33,25 @@ export class AnthropicClient extends EventEmitter {
     systemPrompt?: string
   ): Promise<void> {
     try {
-      // Set up streaming request
-      const stream = await this.client.messages.create({
+      // Format messages for the completions API
+      const prompt = this.formatMessagesForCompletions(messages);
+      const system = systemPrompt || 'You are a helpful assistant that generates website code based on user descriptions.';
+
+      // Stream the completions API response
+      const stream = await this.client.completions.create({
         model: MODEL_CONFIG.model,
-        max_tokens: MODEL_CONFIG.maxTokens,
+        max_tokens_to_sample: MODEL_CONFIG.maxTokens,
         temperature: MODEL_CONFIG.temperature,
-        system: systemPrompt || 'You are a helpful assistant that generates website code based on user descriptions.',
-        messages,
+        prompt: `${system}\n\n${prompt}`,
         stream: true,
       });
 
       // Process the stream
       let fullContent = '';
 
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.text) {
-          const text = chunk.delta.text;
+      for await (const completion of stream) {
+        if (completion.completion) {
+          const text = completion.completion;
           fullContent += text;
 
           // Emit the message content
@@ -71,6 +74,16 @@ export class AnthropicClient extends EventEmitter {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  /**
+   * Format message history for completions API
+   */
+  private formatMessagesForCompletions(messages: Array<{ role: 'user' | 'assistant'; content: string }>): string {
+    return messages.map(message => {
+      const rolePrefix = message.role === 'user' ? 'Human: ' : 'Assistant: ';
+      return `${rolePrefix}${message.content}`;
+    }).join('\n\n') + '\n\nAssistant:';
   }
 
   /**

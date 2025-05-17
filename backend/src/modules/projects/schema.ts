@@ -15,7 +15,6 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export const projectSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
-  updatedAt: z.date(),
   messages: z.array(
     z.object({
       id: z.string(),

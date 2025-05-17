@@ -27,9 +27,9 @@
 
 - [x] **BuildService for Workspace Management**
 
-  - [x] Create `backend/services/build-service.ts`.
+  - [x] Create `backend/services/build/service.ts`.
   - Responsibilities:
-    - [x] Copy the template project into `workspace/{project_id}` when a project is created.
+    - [x] Copy the React template from `backend/template` into `workspace/{project_id}` when a project is created.
     - [x] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
     - [x] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
 
@@ -53,10 +53,18 @@
   - [x] On `POST /api/projects/:id/messages`:
     - [x] Save user message, send prompt to AI, apply code edits, rebuild, and stream results.
 
-- [ ] **Static Preview Serving**
+- [x] **Static Preview Serving**
 
-  - [ ] After each build, ensure Fastify serves `workspace/{id}/dist` under `/preview/{id}`.
-  - [ ] Frontend reloads iframe when receiving `preview-ready` events during SSE flow.
+  - [x] After each build, ensure Fastify serves `workspace/{id}/dist` under `/preview/{id}`.
+  - [x] Frontend reloads iframe when receiving `preview-ready` events during SSE flow.
+
+- [x] **Backend Refactoring**
+
+  - [x] Implement modular architecture with proper separation of concerns.
+  - [x] Create core modules for server and database management.
+  - [x] Organize endpoints into feature modules (health, projects).
+  - [x] Move services into dedicated directories with proper structure.
+  - [x] Update tests to work with new module structure.
 
 - [x] **Testing & Pre‑commit Setup**
 
@@ -64,6 +72,7 @@
   - [x] Write unit tests for BuildService and API endpoints using Vitest.
   - [ ] Add pre‑commit hooks: `format → lint → test`.
 
-- [ ] **Documentation**
-  - [ ] Keep README minimal and place detailed docs in `docs/` as per agentic rules.
+- [x] **Documentation**
+  - [x] Keep README minimal and place detailed docs in project_description.
+  - [x] Update architecture documentation to reflect the current project structure.
   - [ ] Document API usage, how to run dev servers, and how to extend template projects.
