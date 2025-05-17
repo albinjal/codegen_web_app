@@ -23,7 +23,7 @@
 
   - [x] Initialize a Fastify server in `backend/` with TypeScript.
   - [x] Implement routes from the HTTP surface table.
-  - [x] Provide an SSE endpoint for streaming chat responses.
+  - [x] Provide an SSE endpoint for streaming chat responses (via `GET /api/projects/:id/stream`).
 
 - [x] **BuildService for Workspace Management**
 
@@ -48,10 +48,17 @@
 
   - [x] On `POST /api/projects`:
     - [x] Create DB entries for the new project and first user message.
-    - [x] Start BuildService to set up workspace and run initial build.
-    - [x] Stream AI responses (SSE) while saving assistant messages.
+    - [x] Respond with JSON `{projectId}`.
+    - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
+    - [ ] Start BuildService to set up workspace and run initial build (BuildService integration pending).
   - [x] On `POST /api/projects/:id/messages`:
-    - [x] Save user message, send prompt to AI, apply code edits, rebuild, and stream results.
+    - [x] Save user message.
+    - [x] Respond with JSON `{messageId}`.
+    - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
+    - [ ] Apply code edits, rebuild (BuildService integration pending).
+  - [x] SSE (`GET /api/projects/:id/stream`):
+    - [x] Sends historic messages on connect.
+    - [x] Listens for project-specific AI events from `serverEvents` and forwards them to the client.
 
 - [x] **Static Preview Serving**
 

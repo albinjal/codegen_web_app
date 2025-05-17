@@ -107,24 +107,41 @@ model Message {
 
 1. **Create project** – Frontend `POST /api/projects` with `{ initialPrompt }`.
 2. Backend:
-   1. Makes workspace dir from the backend/template.
-   2. Saves user message in DB.
-   3. Sends prompt to Anthropic; streams assistant tokens ↦ SSE.
-   4. Runs initial `vite build` → `workspace/{id}/dist`.
-3. Backend registers static route
-4. Frontend iframe points at `/preview/${id}/index.html`. On `preview‑ready` SSE it reloads.
+   1. Creates the project and saves the initial user message in the DB.
+   2. Responds with `{ projectId }`.
+   3. Asynchronously, triggers AI processing for the initial prompt. This involves:
+      1. Fetching message history.
+      2. Sending prompt to Anthropic.
+      3. Receiving AI response (streaming).
+      4. Saving the complete assistant message to the DB.
+      5. Emitting project-specific events (e.g., `ai_content_<projectId>`, `ai_complete_<projectId>`) via a server-side event emitter.
+   4. (BuildService, if active) Makes workspace dir from `backend/template`, runs initial `vite build` → `workspace/{id}/dist`.
+3. Frontend, upon receiving `{ projectId }`:
+   1. Navigates to the project page (`/project/:id`).
+   2. Establishes an SSE connection to `GET /api/projects/:id/stream`.
+   3. The stream sends historic messages, then listens for `ai_content_<projectId>` and `ai_complete_<projectId>` events to display the AI response.
+   4. The iframe for preview points at `/preview/${projectId}/dist/index.html`. It reloads on `preview-ready` build events (if BuildService is active and emitting these via SSE).
+
+4. **Send subsequent message** - Frontend `POST /api/projects/:id/messages` with `{ content }`.
+5. Backend:
+   1. Saves the user message in the DB.
+   2. Responds with `{ messageId }`.
+   3. Asynchronously, triggers AI processing for the new message (similar to step 2.3).
+6. Frontend's existing SSE stream (`GET /api/projects/:id/stream`) receives the `ai_content` and `ai_complete` events for the new response.
 
 ---
 
 ## 6  HTTP Surface
 
-| Method | Path                         | Purpose                               |
-| ------ | ---------------------------- | ------------------------------------- |
-| `GET`  | `/api/health`                | Health check endpoint                 |
-| `POST` | `/api/projects`              | Create project & first AI round (SSE) |
-| `GET`  | `/api/projects/:id`          | Get project metadata + messages       |
-| `POST` | `/api/projects/:id/messages` | Send user message and get AI response |
-| `GET`  | `/preview/:id/*`             | Static preview files                  |
+| Method | Path                         | Purpose                                                     | Response Type |
+| ------ | ---------------------------- | ----------------------------------------------------------- | ------------- |
+| `GET`  | `/api/health`                | Health check endpoint                                       | JSON          |
+| `POST` | `/api/projects`              | Create project & initial message, trigger AI processing     | JSON          |
+| `GET`  | `/api/projects`              | List all projects                                           | JSON          |
+| `GET`  | `/api/projects/:id`          | Get project metadata + messages                             | JSON          |
+| `POST` | `/api/projects/:id/messages` | Send user message, trigger AI response                      | JSON          |
+| `GET`  | `/api/projects/:id/stream`   | SSE stream for project updates (AI responses, build events) | text/event-stream |
+| `GET`  | `/preview/:id/*`             | Static preview files for built project                      | HTML/CSS/JS   |
 
 ---
 

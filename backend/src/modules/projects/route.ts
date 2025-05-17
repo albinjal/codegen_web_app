@@ -121,15 +121,15 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Handlers for centrally emitted AI events
     const onAiContent = (data: { type: 'content', content: string, projectId: string }) => {
-      fastify.log.info(`SSE onAiContent for project ${data.projectId}. Current stream is for ${projectId}.`);
+      // fastify.log.info(`SSE onAiContent for project ${data.projectId}. Current stream is for ${projectId}.`);
       if (data.projectId === projectId) sendEvent({ type: 'ai_content', content: data.content });
     };
     const onAiComplete = (data: { type: 'complete', message: any, projectId: string }) => {
-      fastify.log.info(`SSE onAiComplete for project ${data.projectId}. Current stream is for ${projectId}.`);
+      // fastify.log.info(`SSE onAiComplete for project ${data.projectId}. Current stream is for ${projectId}.`);
       if (data.projectId === projectId) sendEvent({ type: 'ai_complete', message: data.message });
     };
     const onAiError = (data: { type: 'error', error: string, projectId: string }) => {
-      fastify.log.error(`SSE onAiError for project ${data.projectId}: ${data.error}. Current stream is for ${projectId}.`);
+      // fastify.log.error(`SSE onAiError for project ${data.projectId}: ${data.error}. Current stream is for ${projectId}.`);
       if (data.projectId === projectId) sendEvent({ type: 'ai_error', error: data.error });
     };
 
