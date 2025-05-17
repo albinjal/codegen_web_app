@@ -26,72 +26,53 @@ export class AnthropicClient extends EventEmitter {
   }
 
   /**
-   * Stream a response from Anthropic
+   * Stream a response from Anthropic using the Messages API
    */
   async streamMessage(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
     systemPrompt?: string
   ): Promise<void> {
     try {
-      // Format messages for the completions API
-      const AImessages = this.formatMessagesForCompletions(messages);
+      const apiMessages: Anthropic.MessageParam[] = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
 
-      let finalPromptString = AImessages;
-      if (systemPrompt && systemPrompt.trim() !== '') {
-        finalPromptString = `${systemPrompt}\n\n${AImessages}`;
-      } else {
-        // If no systemPrompt is provided (e.g. because instructions are in `messages`),
-        // ensure the formatMessagesForCompletions handles the structure.
-        // The formatMessagesForCompletions already appends "Assistant:" so it should be ready.
-      }
-
-      // Stream the completions API response
-      const stream = await this.client.completions.create({
+      const stream = await this.client.messages.create({
         model: MODEL_CONFIG.model,
-        max_tokens_to_sample: MODEL_CONFIG.maxTokens,
+        max_tokens: MODEL_CONFIG.maxTokens,
         temperature: MODEL_CONFIG.temperature,
-        prompt: finalPromptString,
+        messages: apiMessages,
         stream: true,
       });
 
-      // Process the stream
       let fullContent = '';
 
-      for await (const completion of stream) {
-        if (completion.completion) {
-          const text = completion.completion;
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          const text = event.delta.text;
           fullContent += text;
-
-          // Emit the message content
           this.emit('message', {
             type: 'content',
             content: text,
           });
+        } else if (event.type === 'message_stop') {
+          this.emit('message', {
+            type: 'complete',
+            content: fullContent,
+          });
+        } else if (event.type === 'message_start') {
+          // You might want to handle message_start if needed, e.g., to get the message ID
+          // console.log('Anthropic message_start:', event.message);
         }
       }
-
-      // Emit complete event with full content
-      this.emit('message', {
-        type: 'complete',
-        content: fullContent,
-      });
     } catch (error) {
-      console.error('Error streaming from Anthropic:', error);
+      console.error('Error streaming from Anthropic Messages API:', error);
       this.emit('message', {
         type: 'error',
         error: error instanceof Error ? error.message : String(error),
       });
     }
-  }
-
-  /**
-   * Format message history for completions API
-   */
-  private formatMessagesForCompletions(messages: Array<{ role: 'user' | 'assistant'; content: string }>): string {
-    return messages.map(message => {
-      const rolePrefix = message.role === 'user' ? 'Human: ' : 'Assistant: ';
-      return `${rolePrefix}${message.content}`;
-    }).join('\n\n') + '\n\nAssistant:';
   }
 
   /**

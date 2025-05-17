@@ -1,28 +1,30 @@
 /**
  * Projects module controller
  */
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { getPrismaClient } from '../../core/database.js';
 // import { BuildService } from '../../services/build/index.js'; // Commented out if BuildService is not ready/used yet
-import { AnthropicClient } from '../../services/anthropic/index.js';
+import { AnthropicClient, AnthropicMessageEvent } from '../../services/anthropic/index.js';
 import { CreateProjectInput, ProjectOutput } from './schema.js';
+import { EventEmitter } from 'events';
+import { env } from '../../config/env.js';
 
 // Get instances of required services
-const prisma = getPrismaClient();
+const prismaClient = getPrismaClient();
 // const buildService = new BuildService(); // Commented out if BuildService is not ready/used yet
-const anthropicClient = new AnthropicClient();
+const globalAnthropicClient = new AnthropicClient();
 
 /**
  * Creates a new project with the initial prompt
  */
 export async function createProject(input: CreateProjectInput): Promise<{ projectId: string }> {
   // Create the project in the database
-  const project = await prisma.project.create({
+  const project = await prismaClient.project.create({
     data: {}
   });
 
   // Create the initial message
-  await prisma.message.create({
+  await prismaClient.message.create({
     data: {
       projectId: project.id,
       role: 'user',
@@ -40,7 +42,7 @@ export async function createProject(input: CreateProjectInput): Promise<{ projec
  * Retrieves all projects
  */
 export async function listProjects(): Promise<ProjectOutput[]> {
-  const projects = await prisma.project.findMany({
+  const projects = await prismaClient.project.findMany({
     include: {
       messages: {
         orderBy: { createdAt: 'asc' }, // Optional: order messages if needed for display
@@ -72,7 +74,7 @@ export async function listProjects(): Promise<ProjectOutput[]> {
  * Retrieves a project by its ID
  */
 export async function getProject(projectId: string): Promise<ProjectOutput> {
-  const project = await prisma.project.findUnique({
+  const project = await prismaClient.project.findUnique({
     where: { id: projectId },
     include: {
       messages: true
@@ -98,11 +100,16 @@ export async function getProject(projectId: string): Promise<ProjectOutput> {
 }
 
 /**
- * Adds a new message to a project and processes AI response
+ * Adds a new user message to a project.
+ * This function NO LONGER triggers AI response.
  */
-export async function addMessage(projectId: string, content: string): Promise<{ messageId: string }> {
+export async function addMessage(
+  projectId: string,
+  content: string,
+  prismaInstance: PrismaClient
+): Promise<{ messageId: string }> {
   // Check if project exists
-  const project = await prisma.project.findUnique({
+  const project = await prismaInstance.project.findUnique({
     where: { id: projectId }
   });
 
@@ -111,7 +118,7 @@ export async function addMessage(projectId: string, content: string): Promise<{ 
   }
 
   // Create the user message
-  const message = await prisma.message.create({
+  const message = await prismaInstance.message.create({
     data: {
       projectId,
       role: 'user',
@@ -123,11 +130,48 @@ export async function addMessage(projectId: string, content: string): Promise<{ 
 }
 
 /**
- * Process AI response for a project
+ * Process AI response for a project.
+ * This function is now called centrally after a new message is added.
+ * It creates its own Anthropic client for the operation and emits project-specific events.
  */
-export async function processAIResponse(projectId: string): Promise<void> {
+export async function processAIResponse(
+  projectId: string,
+  prismaInstance: PrismaClient,
+  serverEvents: EventEmitter,
+  anthropicApiKey: string | undefined
+): Promise<void> {
+  const localAnthropicClient = new AnthropicClient(anthropicApiKey || env.ANTHROPIC_API_KEY);
+
+  // Setup listeners for this specific Anthropic call
+  localAnthropicClient.on('message', (event: AnthropicMessageEvent) => {
+    if (event.type === 'content' && event.content) {
+      serverEvents.emit(`ai_content_${projectId}`, { type: 'content', content: event.content, projectId });
+    } else if (event.type === 'error') {
+      console.error(`Anthropic error for project ${projectId}:`, event.error);
+      serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: event.error, projectId });
+    } else if (event.type === 'complete') {
+      if (event.content) {
+        prismaInstance.message.create({
+          data: {
+            projectId: projectId,
+            role: 'assistant',
+            content: event.content,
+          }
+        }).then(savedMessage => {
+          serverEvents.emit(`ai_complete_${projectId}`, { type: 'complete', message: savedMessage, projectId });
+        }).catch(dbError => {
+          console.error(`Failed to save assistant message for project ${projectId}:`, dbError);
+          serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: 'Failed to save assistant message.', projectId });
+        });
+      } else {
+        // Handle cases where completion might be empty but still signifies end
+        serverEvents.emit(`ai_complete_${projectId}`, { type: 'complete', message: null, projectId });
+      }
+    }
+  });
+
   // Get all messages for the project
-  const messages = await prisma.message.findMany({
+  const messages = await prismaInstance.message.findMany({
     where: { projectId },
     orderBy: { createdAt: 'asc' }
   });
@@ -140,10 +184,8 @@ export async function processAIResponse(projectId: string): Promise<void> {
   // Format messages for Anthropic API
   const formattedMessages = messages.map((msg, index) => {
     let currentContent = msg.content;
-    // Check if it's the last message and if it's a user message
     if (index === messages.length - 1 && msg.role === 'user') {
-      // The formatPrompt method already includes the necessary system-level instructions
-      currentContent = anthropicClient.formatPrompt(msg.content);
+      currentContent = globalAnthropicClient.formatPrompt(msg.content);
     }
     return {
       role: msg.role as 'user' | 'assistant',
@@ -151,8 +193,18 @@ export async function processAIResponse(projectId: string): Promise<void> {
     };
   });
 
-  // Stream the AI response. The system prompt is effectively embedded in the last user message.
-  anthropicClient.streamMessage(formattedMessages);
+  try {
+    // Stream the AI response using the local client instance
+    // streamMessage is async and will resolve when the stream is fully processed by its internal loop.
+    await localAnthropicClient.streamMessage(formattedMessages);
+  } catch (error) {
+    console.error(`Error calling localAnthropicClient.streamMessage for project ${projectId}:`, error);
+    serverEvents.emit(`ai_error_${projectId}`, {
+      type: 'error',
+      error: error instanceof Error ? error.message : 'Anthropic stream initiation failed',
+      projectId
+    });
+  }
 }
 
 export interface BuildEvent {

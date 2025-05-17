@@ -16,12 +16,24 @@ export interface Message {
 }
 
 export interface SSEEventData {
-  type: 'content' | 'error' | 'complete' | 'build' | 'projectCreated'; // Added projectCreated
-  content?: string;
-  error?: string;
-  projectId?: string; // For projectCreated event
+  type:
+    | 'historic_messages'
+    | 'ai_content'
+    | 'ai_complete'
+    | 'ai_error' // Added for completeness, though ProjectPage handles 'error' generally
+    | 'connected'
+    | 'content' // Keep for now if any old code relies on it, but new types are ai_content
+    | 'error'
+    | 'complete' // Keep for now, new type is ai_complete
+    | 'build'
+    | 'projectCreated';
+  content?: string; // For 'ai_content' and old 'content'
+  error?: string; // For 'ai_error' and old 'error'
+  projectId?: string; // For projectCreated event or general context if needed
   buildType?: string; // e.g., 'start', 'progress', 'preview-ready', 'error'
-  message?: string; // For build messages
+  buildMessage?: string; // Renamed from message for build messages
+  messages?: Message[]; // For 'historic_messages'
+  message?: Message; // For 'ai_complete' (the full assistant message object), and old 'connected' text message.
 }
 
 // Placeholder for listing projects

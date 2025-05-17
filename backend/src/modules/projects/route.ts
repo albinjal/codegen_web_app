@@ -22,8 +22,13 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     const input = request.body as CreateProjectInput;
+    const { prisma, serverEvents } = fastify; // Get decorated services
     try {
       const { projectId } = await createProject(input);
+
+      // Trigger AI processing for the initial prompt
+      processAIResponse(projectId, prisma, serverEvents, undefined)
+        .catch(err => fastify.log.error(err, `Background AI processing failed for new project ${projectId}`));
 
       reply.code(201).send({ projectId });
     } catch (error) {
@@ -66,15 +71,17 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   }>, reply) => {
     const { id } = request.params;
     const { content } = request.body;
+    const { prisma, serverEvents, anthropicClient } = fastify; // Get decorated services
 
     try {
-      const { messageId } = await addMessage(id, content);
+      // addMessage now takes prisma instance
+      const { messageId } = await addMessage(id, content, prisma);
 
-      // Notify active stream for this project ID if possible (e.g., via an event emitter or pub/sub for this projectId)
-      // This is an advanced feature for instant updates on all connected clients.
-      // For a simpler model, the client might just re-fetch or the stream might periodically check.
-      // Or, the call to processAIResponse in the stream endpoint will pick up the new message.
-      fastify.serverEvents?.emit(`new_message_${id}`); // Emit an event that the stream can listen to
+      // Centrally trigger AI processing. Do not await, let it run in background.
+      processAIResponse(id, prisma, serverEvents, undefined)
+        .catch(err => fastify.log.error(err, `Background AI processing failed for project ${id}`));
+
+      // No longer emit `new_message_${id}` from here
 
       reply.code(201).send({ messageId });
     } catch (error) {
@@ -90,10 +97,12 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   // SSE Stream endpoint for a project
   fastify.get('/:id/stream', async (request: FastifyRequest<{ Params: MessageParams }>, reply) => {
     const { id: projectId } = request.params;
+    const { prisma, serverEvents, buildService } = fastify; // Get decorated services
 
     // Validate project existence
-    const project = await getProject(projectId); // Using existing controller function
-    if (!project) {
+    try {
+      await getProject(projectId); // Uses module-level prisma, ensure this is okay or pass prisma
+    } catch (error) {
       reply.code(404).send({ error: 'Project not found for SSE stream' });
       return;
     }
@@ -105,73 +114,60 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     const sendEvent = (data: any) => {
-      reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    const anthropicClient = fastify.anthropicClient;
-    const buildService = fastify.buildService;
-    const prisma = fastify.prisma; // Get prisma from fastify instance
-
-    // Handler for Anthropic messages
-    const onAnthropicMessage = (event: any) => {
-      if (event.type === 'content' && event.content) {
-        sendEvent({ type: 'content', content: event.content });
-      } else if (event.type === 'error') {
-        sendEvent({ type: 'error', error: event.error });
-        // Consider whether to close the stream on certain errors
-      } else if (event.type === 'complete') {
-        if (event.content) { // Save the complete assistant message
-          prisma.message.create({
-            data: {
-              projectId: projectId,
-              role: 'assistant',
-              content: event.content,
-            }
-          }).catch(dbError => fastify.log.error(dbError, 'Failed to save assistant message from SSE'));
-        }
-        sendEvent({ type: 'complete', content: event.content });
+      if (!reply.raw.writableEnded) {
+        reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
       }
     };
 
-    // Handler for build events
+    // Handlers for centrally emitted AI events
+    const onAiContent = (data: { type: 'content', content: string, projectId: string }) => {
+      fastify.log.info(`SSE onAiContent for project ${data.projectId}. Current stream is for ${projectId}.`);
+      if (data.projectId === projectId) sendEvent({ type: 'ai_content', content: data.content });
+    };
+    const onAiComplete = (data: { type: 'complete', message: any, projectId: string }) => {
+      fastify.log.info(`SSE onAiComplete for project ${data.projectId}. Current stream is for ${projectId}.`);
+      if (data.projectId === projectId) sendEvent({ type: 'ai_complete', message: data.message });
+    };
+    const onAiError = (data: { type: 'error', error: string, projectId: string }) => {
+      fastify.log.error(`SSE onAiError for project ${data.projectId}: ${data.error}. Current stream is for ${projectId}.`);
+      if (data.projectId === projectId) sendEvent({ type: 'ai_error', error: data.error });
+    };
+
+    // Handler for build events (if/when active)
     const onBuildEvent = (event: any) => {
       if (event.projectId === projectId) { // Ensure event is for this project
         sendEvent({ type: 'build', buildType: event.type, message: event.message });
         if (event.type === 'preview-ready') {
-          sendEvent({ type: 'preview-ready', projectId: projectId }); // Explicit preview-ready event
+          sendEvent({ type: 'preview-ready', projectId: projectId });
         }
       }
     };
 
-    // Function to process AI and attach listeners
-    const processAndListen = async () => {
-      // Detach old listeners if any (important for re-calls if using serverEvents)
-      anthropicClient.removeListener('message', onAnthropicMessage);
-      buildService.removeListener('build', onBuildEvent);
+    // Subscribe to project-specific AI events
+    serverEvents.on(`ai_content_${projectId}`, onAiContent);
+    serverEvents.on(`ai_complete_${projectId}`, onAiComplete);
+    serverEvents.on(`ai_error_${projectId}`, onAiError);
+    buildService?.on('build', onBuildEvent); // buildService might be undefined if not fully integrated
 
-      // Attach listeners
-      anthropicClient.on('message', onAnthropicMessage);
-      buildService.on('build', onBuildEvent);
+    // Send existing messages to the client once upon connection
+    getProject(projectId)
+      .then(projectData => {
+        sendEvent({ type: 'historic_messages', messages: projectData.messages });
+        sendEvent({ type: 'connected', message: 'SSE connection established and history loaded' });
+      })
+      .catch(err => {
+        fastify.log.error(err, `Error fetching project history for SSE stream ${projectId}`);
+        sendEvent({ type: 'error', error: 'Failed to load project history.' });
+      });
 
-      await processAIResponse(projectId); // This fetches messages and calls Anthropic
-    };
-
-    // Initial processing when client connects
-    processAndListen();
-    sendEvent({ type: 'connected', message: 'SSE connection established' });
-
-    // If using an event emitter for new messages on this project
-    const newMessageHandler = () => {
-      fastify.log.info(`SSE stream for ${projectId} detected new message, re-processing AI.`);
-      processAndListen(); // Re-process AI when a new message is posted
-    };
-    fastify.serverEvents?.on(`new_message_${projectId}`, newMessageHandler);
+    // No more processAndListen() or newMessageHandler for `new_message_...`
 
     // Clean up on client disconnect
     request.raw.on('close', () => {
-      anthropicClient.removeListener('message', onAnthropicMessage);
-      buildService.removeListener('build', onBuildEvent);
-      fastify.serverEvents?.removeListener(`new_message_${projectId}`, newMessageHandler);
+      serverEvents.removeListener(`ai_content_${projectId}`, onAiContent);
+      serverEvents.removeListener(`ai_complete_${projectId}`, onAiComplete);
+      serverEvents.removeListener(`ai_error_${projectId}`, onAiError);
+      buildService?.removeListener('build', onBuildEvent);
       fastify.log.info(`SSE connection closed for project ${projectId}`);
     });
   });

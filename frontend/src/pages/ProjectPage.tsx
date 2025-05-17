@@ -38,7 +38,7 @@ const ProjectPage: React.FC = () => {
         if (fetchedProject) {
           setProject(fetchedProject);
           setMessages(fetchedProject.messages || []);
-          setPreviewUrl(`/preview/${projectId}/index.html?cachebust=${Date.now()}`);
+          setPreviewUrl(`/preview/${projectId}/dist/index.html?cachebust=${Date.now()}`);
         } else {
           // TODO: Handle project not found, navigate back or show error
           console.error('Project not found');
@@ -68,32 +68,30 @@ const ProjectPage: React.FC = () => {
         console.log('SSE Received:', data);
 
         switch (data.type) {
-          case 'content':
+          case 'historic_messages':
+            if (Array.isArray(data.messages)) {
+              setMessages(data.messages);
+            }
+            break;
+          case 'ai_content':
             setAssistantStreamingMessage(prev => ({
               id: prev?.id || `streaming-${Date.now()}`,
-              projectId: projectId,
+              projectId: projectId!,
               role: 'assistant',
               content: (prev?.content || '') + (data.content || ''),
               createdAt: prev?.createdAt || new Date().toISOString(),
             }));
             break;
-          case 'complete':
-            setAssistantStreamingMessage(null); // Clear streaming message
-            if (data.content) { // Add the complete message to the list
-              setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
-                projectId: projectId,
-                role: 'assistant',
-                content: data.content || '',
-                createdAt: new Date().toISOString(),
-              }]);
+          case 'ai_complete':
+            setAssistantStreamingMessage(null);
+            if (data.message && data.message.content) {
+              setMessages(prev => [...prev, data.message as MessageData]);
             }
-            // The backend SSE now saves the assistant message upon 'complete' from Anthropic
             break;
           case 'build':
             console.log('Build event:', data.buildType, data.message);
             if (data.buildType === 'preview-ready') {
-              setPreviewUrl(`/preview/${projectId}/index.html?cachebust=${Date.now()}`);
+              setPreviewUrl(`/preview/${projectId}/dist/index.html?cachebust=${Date.now()}`);
             }
             // TODO: Display build status/logs to user
             break;
