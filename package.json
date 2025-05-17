@@ -1,0 +1,13 @@
+{
+  "name": "codegen-web-app",
+  "private": true,
+  "workspaces": ["backend", "frontend", "prisma"],
+  "scripts": {
+    "dev": "concurrently -k -r \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend && npm run build -w backend",
+    "test": "npm run test -ws"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
