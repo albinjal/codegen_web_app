@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { EventEmitter } from 'events';
+import { env } from '../../config/env.js';
 
-// Define model configuration in one place so it can be easily changed
+// Define model configuration based on environment
 const MODEL_CONFIG = {
-  model: process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20240620',
+  model: env.CLAUDE_MODEL,
   maxTokens: 4096,
   temperature: 0.7,
 };
@@ -20,7 +21,7 @@ export class AnthropicClient extends EventEmitter {
   constructor(apiKey?: string) {
     super();
     this.client = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || env.ANTHROPIC_API_KEY,
     });
   }
 

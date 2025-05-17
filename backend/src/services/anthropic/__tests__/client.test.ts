@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AnthropicClient } from '../anthropic-client.js';
+import { AnthropicClient } from '../client.js';
 import { EventEmitter } from 'events';
 
 describe('AnthropicClient', () => {
