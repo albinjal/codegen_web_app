@@ -19,7 +19,7 @@ model Project {
 model Message {
   id        String   @id @default(cuid())
   projectId String
-  role      String   // 'user' | 'assistant'
+  role      String // 'user' | 'assistant'
   content   String
   createdAt DateTime @default(now())
   Project   Project  @relation(fields: [projectId], references: [id])

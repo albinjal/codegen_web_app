@@ -31,6 +31,19 @@ npm run generate --workspace=prisma
 npm run db:push --workspace=prisma
 ```
 
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+# Required: Anthropic API key
+ANTHROPIC_API_KEY=your_api_key_here
+
+# Optional: Claude model selection (defaults to claude-3-5-sonnet-20240620 if not specified)
+# Options: claude-3-opus-20240229, claude-3-5-sonnet-20240620, claude-3-haiku-20240307, etc.
+CLAUDE_MODEL=claude-3-5-sonnet-20240620
+```
+
 ### Development
 
 ```bash
@@ -53,4 +66,3 @@ npm run start
 ```
 
 ## Architecture
-

@@ -14,29 +14,29 @@
   - [x] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document's split repo approach.
   - [x] Add `.gitignore` for `/workspace` as runtime storage.
 
-- [ ] **Prisma Data Models**
+- [x] **Prisma Data Models**
 
-  - [ ] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
-  - [ ] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
+  - [x] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
+  - [x] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
 
-- [ ] **Backend Skeleton (Fastify)**
+- [x] **Backend Skeleton (Fastify)**
 
-  - [ ] Initialize a Fastify server in `backend/` with TypeScript.
-  - [ ] Implement routes from the HTTP surface table.
-  - [ ] Provide an SSE endpoint for streaming chat responses.
+  - [x] Initialize a Fastify server in `backend/` with TypeScript.
+  - [x] Implement routes from the HTTP surface table.
+  - [x] Provide an SSE endpoint for streaming chat responses.
 
-- [ ] **BuildService for Workspace Management**
+- [x] **BuildService for Workspace Management**
 
-  - [ ] Create `backend/services/build-service.ts`.
+  - [x] Create `backend/services/build-service.ts`.
   - Responsibilities:
-    - [ ] Copy the template project into `workspace/{project_id}` when a project is created.
-    - [ ] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
-    - [ ] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
+    - [x] Copy the template project into `workspace/{project_id}` when a project is created.
+    - [x] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
+    - [x] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
 
-- [ ] **Anthropic Integration**
+- [x] **Anthropic Integration**
 
-  - [ ] Implement `AnthropicClient` wrapping the Typescript SDK and centralize model configuration.
-  - [ ] Stream assistant tokens over SSE to the frontend.
+  - [x] Implement `AnthropicClient` wrapping the Typescript SDK and centralize model configuration.
+  - [x] Stream assistant tokens over SSE to the frontend.
 
 - [ ] **Frontend SPA**
 
@@ -44,14 +44,14 @@
   - [ ] Provide a landing page with chat input and project list; embed preview iframe pointing at `/preview/{id}/index.html`.
   - [ ] Use fetch and `EventSource` to interact with the backend API and stream responses.
 
-- [ ] **Database & API Flow**
+- [x] **Database & API Flow**
 
-  - [ ] On `POST /api/projects`:
-    - [ ] Create DB entries for the new project and first user message.
-    - [ ] Start BuildService to set up workspace and run initial build.
-    - [ ] Stream AI responses (SSE) while saving assistant messages.
-  - [ ] On `POST /api/projects/:id/messages`:
-    - [ ] Save user message, send prompt to AI, apply code edits, rebuild, and stream results.
+  - [x] On `POST /api/projects`:
+    - [x] Create DB entries for the new project and first user message.
+    - [x] Start BuildService to set up workspace and run initial build.
+    - [x] Stream AI responses (SSE) while saving assistant messages.
+  - [x] On `POST /api/projects/:id/messages`:
+    - [x] Save user message, send prompt to AI, apply code edits, rebuild, and stream results.
 
 - [ ] **Static Preview Serving**
 

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend server for the Codegen Web App",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
