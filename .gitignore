@@ -14,7 +14,7 @@ workspace/
 
 # Environment variables
 
-\*.env
+**.env
 
 # Logs & misc
 
