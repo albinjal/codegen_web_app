@@ -58,10 +58,10 @@
   - [ ] After each build, ensure Fastify serves `workspace/{id}/dist` under `/preview/{id}`.
   - [ ] Frontend reloads iframe when receiving `preview-ready` events during SSE flow.
 
-- [ ] **Testing & Pre‑commit Setup**
+- [x] **Testing & Pre‑commit Setup**
 
-  - [ ] Configure Prettier and ESLint according to rules in `AGENTS.md`.
-  - [ ] Write unit tests for BuildService and API endpoints using Vitest.
+  - [x] Configure Prettier and ESLint according to rules in `AGENTS.md`.
+  - [x] Write unit tests for BuildService and API endpoints using Vitest.
   - [ ] Add pre‑commit hooks: `format → lint → test`.
 
 - [ ] **Documentation**
