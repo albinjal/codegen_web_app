@@ -46,21 +46,6 @@ Visit **[http://localhost:5173](http://localhost:5173)**. The SPA proxies **/api
 
 ---
 
-## Directory Layout
-
-```txt
-backend/    Fastify API, BuildService, Prisma
-frontend/   React SPA (Vite) – chat UI, iframe preview
-packages/
-  ├─ shared/   TS types, Anthropic wrapper
-  └─ template/ Seed project copied into workspace/
-workspace/  Runtime‑created project directories (git‑ignored)
-prisma/     schema.prisma & migrations
-project_description/  Architecture & implementation docs
-```
-
----
-
 ## Contributing
 
 1. Follow the **Agentic Rules** in `project_description/agentic_rules.md`.

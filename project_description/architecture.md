@@ -49,9 +49,7 @@ codegen-web-app/
 │   ├── src/
 │   ├── index.html
 │   └── vite.config.ts  # dev proxy ↦ 3000
-├── packages/
-│   ├── shared/         # TypeScript types, Anthropic wrapper
-│   └── template/       # seed user‑generated site
+├── template/       # seed user‑generated site
 ├── prisma/             # schema.prisma, migrations
 ├── workspace/          # runtime project dirs (git‑ignored)
 └── pnpm-workspace.yaml

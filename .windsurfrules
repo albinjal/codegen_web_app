@@ -26,13 +26,13 @@
 
 * **Package manager:** `npm` workspaces.
 * **Folders:**
-
   ```txt
   backend/   – Fastify API, Prisma, BuildService
   frontend/  – React SPA (Vite), dev proxy to backend
-  packages/  – shared/ (TS types, Anthropic wrapper) & template/
   workspace/ – runtime project directories (git‑ignored)
   prisma/    – schema.prisma & migrations
+  template/  – seed user‑generated site
+  project_description/ – architecture & implementation docs
   ```
 * **Preview serving:** static `dist/` under `/preview/<project_id>/`.
 * **Single browser origin:** In dev, Vite (5173) proxies `/api` & `/preview` to backend (3000); in prod backend serves built SPA.
