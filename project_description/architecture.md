@@ -102,17 +102,3 @@ model Message {
 
 
 ---
-
-## 7  Security & Resource Considerations
-
-* **Path traversal:** reject `<edit>` paths containing `..` or absolute `/`.
-* **Build timeouts:** kill `vite build` >30 s and emit error event.
-* **Token cost:** cap `max_tokens`; summarise history after N messages.
-
----
-
-## 8  Extensibility Hooks
-
-* Swap SQLite → Postgres by tweaking Prisma datasource.
-* Remote deploy: containerise backend; previews already static.
-* Worker queue for off‑thread `vite build` when parallel usage grows.
