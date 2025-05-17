@@ -1,0 +1,32 @@
+# Dependency caches
+
+node\_modules
+
+# Build outputs
+
+frontend/dist
+backend/public
+workspace/\*\*/dist
+
+# Runtime workspace (user‑generated projects)
+
+workspace/
+
+# Environment variables
+
+\*.env
+
+# Logs & misc
+
+npm-debug.log\*
+.DS\_Store
+
+# Prisma generated
+
+prisma/dev.db
+prisma/dev.db-journal
+
+# VSCode & IDEs
+
+.vscode/
+.idea/
