@@ -1,0 +1,27 @@
+{
+  "name": "codegen-web-app",
+  "version": "1.0.0",
+  "description": "Web application that allows users to generate websites using AI",
+  "private": true,
+  "workspaces": ["backend", "frontend", "prisma"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspace=backend",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.3"
+  },
+  "keywords": ["codegen", "ai", "website-generator"],
+  "author": "",
+  "license": "MIT"
+}

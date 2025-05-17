@@ -17,7 +17,7 @@
 * **Single responsibility** — one concern per module/function.
 * **Fail fast & loudly** — surface invalid input/state early.
 * **Automate the boring** — formatter, linter, tests in pre‑commit.
-* **Document intent, not implementation** — code shows *how*; docs explain *why*.
+* **Document intent, not implementation** — code shows *how*; comments explain *why*.
 * **Consistency is king** — when changing behaviour, update code, tests & docs together.
 
 ---
@@ -32,7 +32,7 @@
   workspace/ – runtime project directories (git‑ignored)
   prisma/    – schema.prisma & migrations
   template/  – seed user‑generated site
-  project_description/ – architecture & implementation docs
+  project_description/ – architecture & implementation plan
   .env – environment variables
   ```
 * **Preview serving:** static `dist/` under `/preview/<project_id>/`.

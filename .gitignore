@@ -1,32 +1,45 @@
-# Dependency caches
-
-node\_modules
+# Dependency directories
+node_modules/
+.pnp/
+.pnp.js
 
 # Build outputs
-
-frontend/dist
-backend/public
-workspace/\*\*/dist
-
-# Runtime workspace (user‑generated projects)
-
-workspace/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
 
 # Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-**.env
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Logs & misc
-
-npm-debug.log\*
-.DS\_Store
-
-# Prisma generated
-
-prisma/dev.db
-prisma/dev.db-journal
-
-# VSCode & IDEs
-
-.vscode/
+# Editor directories and files
 .idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Workspace directory (runtime storage)
+/workspace/
+
+# SQLite database files
+*.sqlite
+*.sqlite-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Coverage directory used by tools like istanbul
+coverage/

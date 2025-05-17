@@ -1,6 +1,6 @@
 # Step-by-Step Implementation Plan
 
-**Clarification**: Below is a step-by-step implementation outline for the Codegen Web App (the site that generates _user_generated_project_ websites). Each task is independent and references the repository docs. No changes are made to existing design decisions or the functional description.
+**Clarification**: Below is a step-by-step implementation outline for the Codegen Web App (the site that generates _user_generated_project_ websites). Each task is independent and references the repository documentation. No changes are made to existing design decisions or the functional description.
 
 ---
 
@@ -8,11 +8,11 @@
 
 > **Note**: Keep this plan updated as tasks are completed.
 
-- [ ] **Monorepo Setup**
+- [x] **Monorepo Setup**
 
-  - [ ] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
-  - [ ] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document’s split repo approach.
-  - [ ] Add `.gitignore` for `/workspace` as runtime storage.
+  - [x] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
+  - [x] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document's split repo approach.
+  - [x] Add `.gitignore` for `/workspace` as runtime storage.
 
 - [ ] **Prisma Data Models**
 
@@ -30,7 +30,7 @@
   - [ ] Create `backend/services/build-service.ts`.
   - Responsibilities:
     - [ ] Copy the template project into `workspace/{project_id}` when a project is created.
-    - [ ] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
+    - [ ] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
     - [ ] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
 
 - [ ] **Anthropic Integration**
