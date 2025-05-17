@@ -17,7 +17,7 @@
 - [ ] **Prisma Data Models**
 
   - [x] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
-  - [ ] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
+  - [x] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
 
 - [ ] **Backend Skeleton (Fastify)**
 
