@@ -38,22 +38,6 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
 
 ---
 
-## 2  Directory Layout (Workspaces)
-
-```
-codegen-web-app/
-├── backend/            # Fastify + Prisma + BuildService
-│   ├── src/
-│   └── public/         # gets populated with frontend build
-├── frontend/           # React + Vite SPA
-│   ├── src/
-│   ├── index.html
-│   └── vite.config.ts  # dev proxy ↦ 3000
-├── template/       # seed user‑generated site
-├── prisma/             # schema.prisma, migrations
-├── workspace/          # runtime project dirs (git‑ignored)
-└── pnpm-workspace.yaml
-```
 
 `backend/` and `frontend/` are independent pnpm workspaces that both depend on `packages/shared`.
 
@@ -102,14 +86,7 @@ model Message {
    2. Saves user message in DB.
    3. Sends prompt to Anthropic; streams assistant tokens ↦ SSE.
    4. Runs initial `vite build` → `workspace/{id}/dist`.
-3. Backend registers static route:
-
-   ```ts
-   fastify.register(import('@fastify/static'), {
-     root: path.join(workspacePath, id, 'dist'),
-     prefix: `/preview/${id}/`,
-   });
-   ```
+3. Backend registers static route
 4. Frontend iframe points at `/preview/${id}/index.html`. On `preview‑ready` SSE it reloads.
 
 ---
