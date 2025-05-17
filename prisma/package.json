@@ -8,7 +8,8 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "test": "echo \"No tests specified for prisma yet\" && exit 0"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"
