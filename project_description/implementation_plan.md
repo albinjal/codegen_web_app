@@ -8,15 +8,15 @@
 
 > **Note**: Keep this plan updated as tasks are completed.
 
-- [ ] **Monorepo Setup**
+- [x] **Monorepo Setup**
 
-  - [ ] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
-  - [ ] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document’s split repo approach.
-  - [ ] Add `.gitignore` for `/workspace` as runtime storage.
+  - [x] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
+  - [x] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document’s split repo approach.
+  - [x] Add `.gitignore` for `/workspace` as runtime storage.
 
 - [ ] **Prisma Data Models**
 
-  - [ ] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
+  - [x] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
   - [ ] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
 
 - [ ] **Backend Skeleton (Fastify)**
