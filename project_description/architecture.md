@@ -39,7 +39,7 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
 ---
 
 
-`backend/` and `frontend/` are independent pnpm workspaces that both depend on `packages/shared`.
+`backend/` and `frontend/` are independent npm workspaces with their own package.json files and .gitignore files.
 
 ---
 
