@@ -126,3 +126,7 @@
 3. **Ask for git confirmation** → commit & push (or await human approval).
 4. **Open PR** → ensure description links to docs/tests.
 5. **CI green** → merge.
+
+
+## Other rules
+- Refer to the files in project_description/ and update as we go along but DON'T update design_decisions.md or functional_description.md.
