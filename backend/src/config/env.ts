@@ -26,6 +26,8 @@ export interface EnvironmentConfig {
   BUILD_TIMEOUT_MS: number;
   /** Node environment */
   NODE_ENV: 'development' | 'production' | 'test';
+  /** Project directory path */
+  PWD: string;
 }
 
 /**
@@ -58,4 +60,5 @@ export const env: EnvironmentConfig = {
   TEMPLATE_DIR: getOptionalEnv('TEMPLATE_DIR', 'template'),
   BUILD_TIMEOUT_MS: parseInt(getOptionalEnv('BUILD_TIMEOUT_MS', '30000'), 10),
   NODE_ENV: getOptionalEnv('NODE_ENV', 'development') as 'development' | 'production' | 'test',
+  PWD: getOptionalEnv('PWD', process.cwd()),
 };

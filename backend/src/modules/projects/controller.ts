@@ -3,7 +3,7 @@
  */
 import { Prisma, PrismaClient } from '@prisma/client';
 import { getPrismaClient } from '../../core/database.js';
-// import { BuildService } from '../../services/build/index.js'; // Commented out if BuildService is not ready/used yet
+import { BuildService } from '../../services/build/index.js';
 import { AnthropicClient, AnthropicMessageEvent } from '../../services/anthropic/index.js';
 import { CreateProjectInput, ProjectOutput } from './schema.js';
 import { EventEmitter } from 'events';
@@ -11,7 +11,7 @@ import { env } from '../../config/env.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
-// const buildService = new BuildService(); // Commented out if BuildService is not ready/used yet
+const buildService = new BuildService();
 const globalAnthropicClient = new AnthropicClient();
 
 /**
@@ -33,7 +33,7 @@ export async function createProject(input: CreateProjectInput): Promise<{ projec
   });
 
   // Create the project workspace
-  // await buildService.createProject(project.id); // Commented out if BuildService is not ready
+  await buildService.createProject(project.id);
 
   return { projectId: project.id };
 }
@@ -218,13 +218,13 @@ export interface BuildEvent {
  * Handles build events for a project
  */
 export function handleBuildEvents(projectId: string, callback: (event: BuildEvent) => void): void {
-  // buildService.on('build', (event: BuildEvent) => { // Assuming BuildService emits typed events
-  //   if (event.projectId === projectId) {
-  //     callback(event);
-  //   }
-  // });
+  buildService.on('build', (event: BuildEvent) => { // Assuming BuildService emits typed events
+    if (event.projectId === projectId) {
+      callback(event);
+    }
+  });
   // Placeholder if BuildService is not active or its event structure is unknown
-  console.warn('handleBuildEvents is a placeholder as BuildService integration might be incomplete.');
+  // console.warn('handleBuildEvents is a placeholder as BuildService integration might be incomplete.');
 }
 
 /**
@@ -232,13 +232,18 @@ export function handleBuildEvents(projectId: string, callback: (event: BuildEven
  */
 export async function applyEdits(projectId: string, content: string): Promise<void> {
   // Parse edits from the AI response
-  // const edits = buildService.parseEdits(content); // Commented out
-  console.warn('applyEdits is a placeholder as BuildService integration might be incomplete.');
+  const edits = buildService.parseEdits(content);
+  // console.warn('applyEdits is a placeholder as BuildService integration might be incomplete for now.');
 
-  // if (edits.length === 0) {
-  //   return;
-  // }
+  if (edits.length === 0) {
+    console.log(`No actionable edits found in content for project ${projectId}`);
+    return;
+  }
 
   // Apply edits to the project
-  // await buildService.applyEdits(projectId, edits); // Commented out
+  await buildService.applyEdits(projectId, edits);
+  // After applying edits, it's common to trigger a new build.
+  // Depending on the flow, this might be handled by an event listener or directly.
+  // For now, let's assume applyEdits might trigger a build internally or emit an event that leads to a build.
+  console.log(`Edits applied for project ${projectId}. A rebuild might be necessary and handled by BuildService or subsequent logic.`);
 }
