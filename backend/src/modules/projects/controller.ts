@@ -34,6 +34,7 @@ export async function createProject(input: CreateProjectInput): Promise<{ projec
 
   // Create the project workspace
   await buildService.createProject(project.id);
+  await buildService.buildProject(project.id);
 
   return { projectId: project.id };
 }
