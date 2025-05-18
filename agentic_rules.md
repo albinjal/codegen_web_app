@@ -59,6 +59,7 @@
 * Write tests next to code (`__tests__` or `*.test.ts`).
 * Target meaningful coverage rather than a % number.
 * Code reviews focus on correctness, clarity, future maintainability.
+* Use vitest for testing.
 
 ---
 
@@ -132,6 +133,3 @@
 ## Other rules
 - Refer to the files in project_description/ and update as we go along but DON'T update design_decisions.md or functional_description.md.
 - Make sure to not get confused about this being a code gen applicaiton. The projects created by the users / template should not be consused with this web app that we are building to generate websites.
-
-
-Backend specfic

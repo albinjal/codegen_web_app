@@ -59,6 +59,7 @@
 * Write tests next to code (`__tests__` or `*.test.ts`).
 * Target meaningful coverage rather than a % number.
 * Code reviews focus on correctness, clarity, future maintainability.
+* Use vitest for testing.
 
 ---
 
