@@ -21,6 +21,7 @@ vi.mock('../../../core/database.js', () => ({
 vi.mock('../../../services/build/index.js', () => ({
   BuildService: vi.fn().mockImplementation(() => ({
     createProject: vi.fn().mockResolvedValue(undefined),
+    buildProject: vi.fn().mockResolvedValue(undefined),
     on: vi.fn(),
     parseEdits: vi.fn().mockReturnValue([]),
     applyEdits: vi.fn().mockResolvedValue(undefined),
@@ -112,7 +113,7 @@ describe('Projects Controller', () => {
       (prisma.project.findUnique as any).mockResolvedValue({ id: projectId });
       (prisma.message.create as any).mockResolvedValue({ id: messageId });
 
-      const result = await addMessage(projectId, content);
+      const result = await addMessage(projectId, content, prisma);
 
       expect(prisma.project.findUnique).toHaveBeenCalledWith({
         where: { id: projectId }
@@ -135,7 +136,7 @@ describe('Projects Controller', () => {
 
       (prisma.project.findUnique as any).mockResolvedValue(null);
 
-      await expect(addMessage(projectId, content)).rejects.toThrow(`Project with ID ${projectId} not found`);
+      await expect(addMessage(projectId, content, prisma)).rejects.toThrow(`Project with ID ${projectId} not found`);
     });
   });
 });
