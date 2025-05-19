@@ -360,6 +360,7 @@ const ProjectPage: React.FC = () => {
         {previewUrl ? (
           <>
             <iframe
+              key={previewUrl}
               ref={iframeRef}
               src={previewUrl}
               title="Project Preview"

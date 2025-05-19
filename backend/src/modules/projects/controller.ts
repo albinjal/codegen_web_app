@@ -14,13 +14,12 @@ import { getRequiredParameters } from '../../services/build/toolConfig.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
-const buildService = new BuildService();
 const globalAnthropicClient = new AnthropicClient();
 
 /**
  * Creates a new project with the initial prompt
  */
-export async function createProject(input: CreateProjectInput): Promise<{ projectId: string }> {
+export async function createProject(input: CreateProjectInput, buildService: BuildService): Promise<{ projectId: string }> {
   // Create the project in the database
   const project = await prismaClient.project.create({
     data: {}
@@ -141,10 +140,10 @@ export async function processAIResponse(
   projectId: string,
   prismaInstance: PrismaClient,
   serverEvents: EventEmitter,
-  anthropicApiKey: string | undefined
+  anthropicApiKey: string | undefined,
+  buildService: BuildService
 ): Promise<void> {
   const localAnthropicClient = new AnthropicClient(anthropicApiKey || env.ANTHROPIC_API_KEY);
-  const buildService = new BuildService(); // Create an instance of BuildService
 
   // Setup listeners for this specific Anthropic call
   localAnthropicClient.on('message', (event: AnthropicMessageEvent) => {
@@ -315,15 +314,11 @@ async function handleToolCalls(
   }
 }
 
-/**
- * Handles build events for a project
- */
-export function handleBuildEvents(projectId: string, callback: (event: BuildEvent) => void): void {
-  buildService.on('build', (event: BuildEvent) => { // Assuming BuildService emits typed events
-    if (event.projectId === projectId) {
-      callback(event);
-    }
-  });
-  // Placeholder if BuildService is not active or its event structure is unknown
-  // console.warn('handleBuildEvents is a placeholder as BuildService integration might be incomplete.');
-}
+// (Optional) If you need handleBuildEvents, pass in the BuildService instance as a parameter.
+// export function handleBuildEvents(projectId: string, buildService: BuildService, callback: (event: BuildEvent) => void): void {
+//   buildService.on('build', (event: BuildEvent) => {
+//     if (event.projectId === projectId) {
+//       callback(event);
+//     }
+//   });
+// }

@@ -1,5 +1,5 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
-import { createProject, getProject, addMessage, processAIResponse, handleBuildEvents, listProjects } from './controller.js';
+import { createProject, getProject, addMessage, processAIResponse, listProjects } from './controller.js';
 import { CreateProjectInput, createProjectSchema } from './schema.js';
 import { z } from 'zod';
 
@@ -22,12 +22,12 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     const input = request.body as CreateProjectInput;
-    const { prisma, serverEvents } = fastify; // Get decorated services
+    const { prisma, serverEvents, buildService } = fastify; // Get decorated services
     try {
-      const { projectId } = await createProject(input);
+      const { projectId } = await createProject(input, buildService);
 
       // Trigger AI processing for the initial prompt
-      processAIResponse(projectId, prisma, serverEvents, undefined)
+      processAIResponse(projectId, prisma, serverEvents, undefined, buildService)
         .catch(err => fastify.log.error(err, `Background AI processing failed for new project ${projectId}`));
 
       reply.code(201).send({ projectId });
@@ -71,14 +71,14 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   }>, reply) => {
     const { id } = request.params;
     const { content } = request.body;
-    const { prisma, serverEvents, anthropicClient } = fastify; // Get decorated services
+    const { prisma, serverEvents, anthropicClient, buildService } = fastify; // Get decorated services
 
     try {
       // addMessage now takes prisma instance
       const { messageId } = await addMessage(id, content, prisma);
 
       // Centrally trigger AI processing. Do not await, let it run in background.
-      processAIResponse(id, prisma, serverEvents, undefined)
+      processAIResponse(id, prisma, serverEvents, undefined, buildService)
         .catch(err => fastify.log.error(err, `Background AI processing failed for project ${id}`));
 
       // No longer emit `new_message_${id}` from here
