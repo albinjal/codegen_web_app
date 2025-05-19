@@ -12,9 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { ChatMessage, BuildStatus } from '@/components/ChatMessage';
+import { ChatMessage } from '@/components/ChatMessage';
 import { ResizableLayout } from '@/components/ResizableLayout';
 import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const ProjectPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -245,6 +247,11 @@ const ProjectPage: React.FC = () => {
     setIsPreviewLoading(false);
   };
 
+  const refreshPreview = () => {
+    setIsPreviewLoading(true);
+    setPreviewUrl(`/preview/${projectId}/dist/index.html?cachebust=${Date.now()}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-100px)]">
@@ -302,14 +309,6 @@ const ProjectPage: React.FC = () => {
             />
           )}
 
-          {buildStatus.status !== 'idle' && (
-            <BuildStatus
-              status={buildStatus.status}
-              message={buildStatus.message}
-              progress={buildStatus.progress}
-            />
-          )}
-
           <div ref={messagesEndRef} />
         </ScrollArea>
 
@@ -342,20 +341,63 @@ const ProjectPage: React.FC = () => {
     </div>
   );
 
-  // Create the preview panel
+  // Create the preview panel with prominent build status banner
   const previewPanel = (
     <div className="flex flex-col h-full overflow-hidden">
       <CardHeader className="px-4 py-3 border-b">
-        <CardTitle className="text-lg">Live Preview</CardTitle>
-        <CardDescription>
-          {isPreviewLoading && (
-            <div className="flex items-center">
-              <Spinner size="sm" className="mr-2" />
-              <span>Updating preview...</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Live Preview</CardTitle>
+            <CardDescription>
+              View your generated web application
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshPreview}
+            disabled={isPreviewLoading || buildStatus.status === 'in-progress'}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh</span>
+          </Button>
+        </div>
+      </CardHeader>
+
+      {/* Build status banner - More prominent placement */}
+      {buildStatus.status !== 'idle' && (
+        <div className={cn(
+          "px-4 py-2.5 flex items-center gap-3",
+          buildStatus.status === 'error' ? 'bg-destructive/10 border-b border-destructive/20' :
+          buildStatus.status === 'complete' ? 'bg-green-500/10 border-b border-green-500/20' :
+          'bg-primary/5 border-b border-primary/10'
+        )}>
+          {buildStatus.status === 'in-progress' && <Spinner size="sm" className="text-primary" />}
+          {buildStatus.status === 'complete' && <CheckCircle className="h-5 w-5 text-green-500" />}
+          {buildStatus.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
+
+          <div className="flex-1">
+            <p className="font-medium text-sm">
+              {buildStatus.status === 'in-progress' && 'Building project...'}
+              {buildStatus.status === 'complete' && 'Build completed successfully'}
+              {buildStatus.status === 'error' && 'Build failed'}
+            </p>
+            {buildStatus.message && <p className="text-xs text-muted-foreground">{buildStatus.message}</p>}
+          </div>
+
+          {/* Progress bar for in-progress builds */}
+          {buildStatus.status === 'in-progress' && buildStatus.progress !== undefined && (
+            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${buildStatus.progress}%` }}
+              />
             </div>
           )}
-        </CardDescription>
-      </CardHeader>
+        </div>
+      )}
+
       <CardContent className="flex-1 p-0 relative overflow-hidden">
         {previewUrl ? (
           <>

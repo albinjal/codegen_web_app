@@ -6,11 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Textarea } from '@/components/ui/textarea'; // Corrected import path
 import { Spinner } from '@/components/ui/spinner';
 
+// Creation steps with descriptions for visual feedback
+const CREATION_STEPS = [
+  { id: 'initializing', label: 'Initializing project...' },
+  { id: 'analyzing', label: 'Analyzing requirements...' },
+  { id: 'generating', label: 'Generating code structure...' },
+  { id: 'finalizing', label: 'Preparing your project...' }
+];
+
 const LandingPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [initialPrompt, setInitialPrompt] = useState('');
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [creationStep, setCreationStep] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,12 +37,25 @@ const LandingPage: React.FC = () => {
     fetchProjects();
   }, []);
 
+  // Effect to simulate progress through creation steps
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (isCreatingProject && creationStep < CREATION_STEPS.length - 1) {
+      timeout = setTimeout(() => {
+        setCreationStep(prev => prev + 1);
+      }, 1200); // Advance to next step every 1.2 seconds for the visual effect
+    }
+    return () => clearTimeout(timeout);
+  }, [isCreatingProject, creationStep]);
+
   const handleCreateProject = async () => {
     if (!initialPrompt.trim()) {
       // TODO: Show error for empty prompt
       return;
     }
     setIsCreatingProject(true);
+    setCreationStep(0); // Reset to first step
+
     try {
       // The createProjectAndConnectSse in ApiService is a bit of a placeholder for how SSE is established.
       // It *simulates* getting a projectId and then creating an EventSource.
@@ -74,19 +96,35 @@ const LandingPage: React.FC = () => {
             className="mb-4 min-h-[150px] text-base"
             disabled={isCreatingProject}
           />
+
+          {isCreatingProject ? (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center space-x-2">
+                <Spinner size="md" className="text-primary" />
+                <div className="flex-1">
+                  <p className="font-medium">{CREATION_STEPS[creationStep].label}</p>
+                  <div className="w-full bg-muted h-2 rounded-full mt-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
+                      style={{ width: `${((creationStep + 1) / CREATION_STEPS.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground italic">
+                This may take a minute. We're analyzing your requirements and crafting the perfect codebase.
+              </p>
+            </div>
+          ) : (
           <Button
             onClick={handleCreateProject}
             disabled={isCreatingProject || !initialPrompt.trim()}
             className="w-full py-6 text-lg"
             size="lg"
           >
-            {isCreatingProject ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Creating Project...
-              </>
-            ) : 'Start Generating'}
+              Start Generating
           </Button>
+          )}
         </CardContent>
       </Card>
 
