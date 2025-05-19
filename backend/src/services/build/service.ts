@@ -198,6 +198,20 @@ export class BuildService extends EventEmitter {
     try {
       const absoluteFilePath = await this.getValidatedFilePath(projectId, relativeFilePath);
 
+      if (oldStr === '') {
+        // Overwrite the file with newStr
+        await writeFile(absoluteFilePath, newStr, 'utf-8');
+        const successMessage = `File ${relativeFilePath} overwritten successfully.`;
+        this.emit('build', {
+          type: 'file_edited',
+          projectId,
+          message: successMessage,
+          data: { path: relativeFilePath, oldStr, newStr }
+        });
+        console.log(`${successMessage} (Project: ${projectId})`);
+        return successMessage;
+      }
+
       const originalContent = await readFile(absoluteFilePath, 'utf-8');
       // Basic string replacement. For more complex scenarios (e.g., regex, multiple occurrences), this would need enhancement.
       // The Anthropic guide implies exact match and replacement of the first occurrence if not specified otherwise.

@@ -24,6 +24,7 @@ const ProjectPage: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const eventSourceRef = useRef<EventSource | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (!projectId) {
@@ -92,6 +93,11 @@ const ProjectPage: React.FC = () => {
             console.log('Build event:', data.buildType, data.message);
             if (data.buildType === 'preview-ready') {
               setPreviewUrl(`/preview/${projectId}/dist/index.html?cachebust=${Date.now()}`);
+              // Reload the iframe if it exists
+              if (iframeRef.current) {
+                // Resetting src will force reload
+                iframeRef.current.src = iframeRef.current.src;
+              }
             }
             // TODO: Display build status/logs to user
             break;
@@ -206,6 +212,7 @@ const ProjectPage: React.FC = () => {
         <CardContent className="flex-1 overflow-hidden p-0">
           {previewUrl ? (
             <iframe
+              ref={iframeRef}
               src={previewUrl}
               title="Project Preview"
               className="w-full h-full border-0"
