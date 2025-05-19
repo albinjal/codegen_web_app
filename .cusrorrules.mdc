@@ -133,3 +133,4 @@
 ## Other rules
 - Refer to the files in project_description/ and update as we go along but DON'T update design_decisions.md or functional_description.md.
 - Make sure to not get confused about this being a code gen applicaiton. The projects created by the users / template should not be consused with this web app that we are building to generate websites.
+- Don't ask for confirmations when only suggesting one path for changes. Just apply them
