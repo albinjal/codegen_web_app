@@ -24,6 +24,7 @@ const ProjectPage: React.FC = () => {
   const { toast } = useToast();
   const [project, setProject] = useState<ProjectData | null>(null);
   const [messages, setMessages] = useState<MessageData[]>([]);
+  const [pendingMessages, setPendingMessages] = useState<MessageData[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -92,7 +93,11 @@ const ProjectPage: React.FC = () => {
 
         switch (data.type) {
           case 'historic_messages':
-            if (Array.isArray(data.messages)) {
+            if (data.messages && Array.isArray(data.messages)) {
+              // Remove any pending messages that are now confirmed by backend
+              setPendingMessages((pending) =>
+                pending.filter(pm => !data.messages!.some((m: any) => m.id === pm.id))
+              );
               setMessages(data.messages);
             }
             break;
@@ -108,6 +113,10 @@ const ProjectPage: React.FC = () => {
           case 'ai_complete':
             setAssistantStreamingMessage(null);
             if (data.message && data.message.content) {
+              // Remove from pending if present
+              setPendingMessages((pending) =>
+                pending.filter(pm => pm.id !== data.message!.id)
+              );
               setMessages(prev => [...prev, data.message as MessageData]);
             }
             break;
@@ -225,15 +234,13 @@ const ProjectPage: React.FC = () => {
       content: newMessage,
       createdAt: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, userMessage]);
+    setPendingMessages(prev => [...prev, userMessage]);
     setNewMessage('');
 
     try {
       await sendMessageAndConnectSse(projectId, userMessage.content);
     } catch (error) {
-      console.error('Failed to send message:', error);
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id)); // Basic revert
-
+      setPendingMessages(prev => prev.filter(m => m.id !== userMessage.id));
       toast({
         variant: "destructive",
         title: "Message failed",
@@ -251,6 +258,15 @@ const ProjectPage: React.FC = () => {
     setIsPreviewLoading(true);
     setPreviewUrl(`/preview/${projectId}/dist/index.html?cachebust=${Date.now()}`);
   };
+
+  // For rendering, merge messages and pendingMessages (dedup by id)
+  const allMessages = [...messages];
+  pendingMessages.forEach(pm => {
+    if (!allMessages.some(m => m.id === pm.id)) {
+      allMessages.push(pm);
+    }
+  });
+  allMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   if (isLoading) {
     return (
@@ -291,7 +307,7 @@ const ProjectPage: React.FC = () => {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0 h-full overflow-hidden">
         <ScrollArea className="flex-grow px-4 py-4">
-          {messages.map((msg) => (
+          {allMessages.map((msg) => (
             <ChatMessage
               key={msg.id}
               role={msg.role}

@@ -86,10 +86,21 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Animated placeholder for loading
+  const LoadingPlaceholder = () => (
+    <div className="animate-pulse space-y-2">
+      <div className="h-4 bg-muted rounded w-3/4" />
+      <div className="h-4 bg-muted rounded w-1/2" />
+      <div className="h-4 bg-muted rounded w-5/6" />
+      <div className="h-4 bg-muted rounded w-2/3" />
+    </div>
+  );
+
   return (
     <Card className="mb-3 overflow-hidden border-primary/10">
       <div className="bg-muted/50 p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
+          {loading && <Spinner size="sm" className="mr-1 text-primary" />}
           {type === 'create_file' ? (
             <FileCode className="h-4 w-4 text-primary" />
           ) : (
@@ -104,8 +115,9 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => !loading && setIsExpanded(!isExpanded)}
           className="h-7 w-7 p-0"
+          disabled={loading}
         >
           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -113,7 +125,12 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
 
       {isExpanded && (
         <div className="p-3 bg-muted/20 max-h-[300px] overflow-auto">
-          {type === 'create_file' ? (
+          {loading ? (
+            <>
+              <LoadingPlaceholder />
+              <div className="text-xs text-muted-foreground mt-2">Waiting for AI to finish...</div>
+            </>
+          ) : type === 'create_file' ? (
             <pre className="text-xs">
               <code>{details?.content || code}</code>
             </pre>
@@ -130,7 +147,7 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
         {loading ? (
           <>
             <Spinner size="sm" />
-            <span>Running...</span>
+            <span>Processing...</span>
           </>
         ) : (
           <>
