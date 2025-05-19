@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
 import { getProjectFileTree } from '../build/fileTreeUtil.js';
+import { generateToolsXml } from '../build/toolConfig.js';
 
 // Define model configuration based on environment
 const MODEL_CONFIG = {
@@ -47,6 +48,9 @@ export class AnthropicClient extends EventEmitter {
         fileTree = 'Could not retrieve project file structure.';
       }
 
+      // Generate the tools XML from our centralized definitions
+      const toolsXml = generateToolsXml();
+
       const systemPrompt = `
 <role>
 You are an expert web developer assistant specializing in React, TypeScript, and modern frontend development. Your goal is to help users build and modify web applications based on their descriptions and requests.
@@ -69,138 +73,7 @@ You are an expert web developer assistant specializing in React, TypeScript, and
 - Use modern ES6+ syntax when appropriate
 </guidelines>
 
-<tools>
-  <tool name="create_file">
-    <description>
-      Creates a new file in the project directory structure. Use this when:
-      - Adding new components, pages, or utility files
-      - Creating configuration files
-      - Adding new assets or resources
-
-      If a file already exists at the specified path, it will be overwritten.
-    </description>
-    <parameters>
-      <parameter name="path" type="string">Path to the file relative to project root (e.g., "src/components/Button.tsx")</parameter>
-      <parameter name="content" type="string">Complete content to write to the file</parameter>
-    </parameters>
-    <examples>
-      <example description="Creating a React component">
-        <create_file path="src/components/Button.tsx">
-import React from 'react';
-
-interface ButtonProps {
-  text: string;
-  onClick?: () => void;
-  variant?: 'primary' | 'secondary';
-}
-
-export const Button: React.FC<ButtonProps> = ({
-  text,
-  onClick,
-  variant = 'primary'
-}) => {
-  return (
-    <button
-      className={\`btn \${variant === 'primary' ? 'btn-primary' : 'btn-secondary'}\`}
-      onClick={onClick}
-    >
-      {text}
-    </button>
-  );
-};
-        </create_file>
-      </example>
-
-      <example description="Creating a utility file">
-        <create_file path="src/utils/formatDate.ts">
-/**
- * Formats a date into a readable string
- * @param date - The date to format
- * @returns Formatted date string
- */
-export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
-        </create_file>
-      </example>
-    </examples>
-  </tool>
-
-  <tool name="str_replace">
-    <description>
-      Replaces text in an existing file. Use this when:
-      - Modifying existing code
-      - Adding new features to existing files
-      - Fixing bugs in existing code
-      - Refactoring components
-
-      The tool will replace exactly one occurrence of old_str with new_str.
-      If old_str is empty, the tool will completely overwrite the file with new_str.
-    </description>
-    <parameters>
-      <parameter name="path" type="string">Path to the file relative to project root</parameter>
-      <parameter name="old_str" type="string">Exact string to replace (must match exactly one occurrence). If empty, overwrites the file</parameter>
-      <parameter name="new_str" type="string">New string to insert</parameter>
-    </parameters>
-    <examples>
-      <example description="Adding a new prop to a component">
-        <str_replace path="src/components/Card.tsx" old_str="interface CardProps {
-  title: string;
-  content: string;
-}" new_str="interface CardProps {
-  title: string;
-  content: string;
-  footer?: React.ReactNode;
-}">
-        </str_replace>
-      </example>
-
-      <example description="Modifying JSX in a component">
-        <str_replace path="src/components/Header.tsx" old_str="return (
-  <header className="app-header">
-    <h1>{title}</h1>
-    <nav>{/* Navigation content */}</nav>
-  </header>
-);" new_str="return (
-  <header className="app-header">
-    <h1>{title}</h1>
-    <nav>
-      <ul className="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/about">About</a></li>
-        <li><a href="/contact">Contact</a></li>
-      </ul>
-    </nav>
-  </header>
-);">
-        </str_replace>
-      </example>
-
-      <example description="Complete file overwrite (using empty old_str)">
-        <str_replace path="src/pages/Home.tsx" old_str="" new_str="import React from 'react';
-import { Hero } from '../components/Hero';
-import { FeatureList } from '../components/FeatureList';
-
-export const HomePage: React.FC = () => {
-  return (
-    <div className="home-page">
-      <Hero
-        title="Welcome to Our App"
-        subtitle="The best solution for your needs"
-      />
-      <FeatureList />
-    </div>
-  );
-};">
-        </str_replace>
-      </example>
-    </examples>
-  </tool>
-</tools>
+${toolsXml}
 
 <best_practices>
   <file_structure>

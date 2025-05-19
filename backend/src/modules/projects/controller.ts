@@ -10,6 +10,7 @@ import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
 import { BuildEvent } from '../../types.js';
 import { ToolParser, ToolCall } from '../../services/build/toolParser.js';
+import { getRequiredParameters } from '../../services/build/toolConfig.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
@@ -222,14 +223,20 @@ async function executeToolCall(
   serverEvents: EventEmitter
 ): Promise<void> {
   try {
+    // Get required parameters for this tool
+    const requiredParams = getRequiredParameters(toolCall.tool);
+
+    // Check if all required parameters are present
+    const missingParams = requiredParams.filter(param => !toolCall.parameters[param]);
+    if (missingParams.length > 0) {
+      throw new Error(`Missing required parameters for ${toolCall.tool} tool: ${missingParams.join(', ')}`);
+    }
+
     switch (toolCall.tool) {
       case 'create_file': {
         const { path, content } = toolCall.parameters;
-        if (!path || !content) {
-          throw new Error('Missing required parameters for create_file tool');
-        }
 
-        // Explicitly ensure path and content are strings
+        // Explicitly ensure parameters are strings
         const pathStr = String(path);
         const contentStr = String(content);
 
@@ -245,13 +252,10 @@ async function executeToolCall(
 
       case 'str_replace': {
         const { path, old_str, new_str } = toolCall.parameters;
-        if (!path || !old_str || !new_str) {
-          throw new Error('Missing required parameters for str_replace tool');
-        }
 
         // Explicitly ensure parameters are strings
         const pathStr = String(path);
-        const oldStrValue = String(old_str);
+        const oldStrValue = old_str !== undefined ? String(old_str) : '';
         const newStrValue = String(new_str);
 
         const result = await buildService.handleEditorStrReplaceCommand(

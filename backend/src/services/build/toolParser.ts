@@ -1,6 +1,7 @@
 /**
  * Utility for parsing tool calls from Claude's response text
  */
+import { TOOL_DEFINITIONS } from './toolConfig.js';
 
 export interface ToolCall {
   tool: string;
@@ -17,13 +18,28 @@ export class ToolParser {
   static parseToolCalls(text: string): ToolCall[] {
     const toolCalls: ToolCall[] = [];
 
-    // Parse create_file tool calls
-    this.parseCreateFileCalls(text, toolCalls);
-
-    // Parse str_replace tool calls
-    this.parseStrReplaceCalls(text, toolCalls);
+    // Parse tool calls for each defined tool
+    for (const toolDef of TOOL_DEFINITIONS) {
+      this.parseToolCallsByName(text, toolCalls, toolDef.name);
+    }
 
     return toolCalls;
+  }
+
+  /**
+   * Parse tool calls for a specific tool
+   */
+  private static parseToolCallsByName(text: string, toolCalls: ToolCall[], toolName: string): void {
+    switch (toolName) {
+      case 'create_file':
+        this.parseCreateFileCalls(text, toolCalls);
+        break;
+      case 'str_replace':
+        this.parseStrReplaceCalls(text, toolCalls);
+        break;
+      default:
+        console.warn(`Unrecognized tool name: ${toolName}`);
+    }
   }
 
   /**
