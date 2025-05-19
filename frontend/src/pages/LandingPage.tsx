@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listProjects, createProjectAndConnectSse, Project } from '@/lib/ApiService'; // Corrected import path
 import { Button } from '@/components/ui/button'; // Corrected import path
-import { Input } from '@/components/ui/input'; // Corrected import path - though Input is not used here, good practice
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Corrected import path
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'; // Corrected import path
 import { Textarea } from '@/components/ui/textarea'; // Corrected import path
+import { Spinner } from '@/components/ui/spinner';
 
 const LandingPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -51,44 +51,82 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card className="mb-8">
-        <CardHeader>
+    <div className="container mx-auto py-8 px-4 max-w-5xl">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold mb-4">AI-Powered Web App Generator</h1>
+        <p className="text-xl text-muted-foreground">
+          Describe your web application and let AI generate the code for you.
+        </p>
+      </div>
+
+      <Card className="mb-12 shadow-lg border-primary/20">
+        <CardHeader className="bg-primary/5 border-b">
           <CardTitle className="text-2xl">Create New Project</CardTitle>
-          <CardDescription>Describe the website you want the AI to generate.</CardDescription>
+          <CardDescription>
+            Describe the website you want the AI to generate. Be as specific as possible.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Textarea
-            placeholder="e.g., A personal portfolio site with a blog section and a contact form."
+            placeholder="e.g., A personal portfolio site with a blog section and a contact form. Use a modern minimal design with a dark theme."
             value={initialPrompt}
             onChange={(e) => setInitialPrompt(e.target.value)}
-            className="mb-4 min-h-[100px]"
+            className="mb-4 min-h-[150px] text-base"
             disabled={isCreatingProject}
           />
-          <Button onClick={handleCreateProject} disabled={isCreatingProject || !initialPrompt.trim()}>
-            {isCreatingProject ? 'Creating Project...' : 'Start Generating'}
+          <Button
+            onClick={handleCreateProject}
+            disabled={isCreatingProject || !initialPrompt.trim()}
+            className="w-full py-6 text-lg"
+            size="lg"
+          >
+            {isCreatingProject ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Creating Project...
+              </>
+            ) : 'Start Generating'}
           </Button>
         </CardContent>
       </Card>
 
-      <h2 className="text-xl font-semibold mb-4">Existing Projects</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-4">Your Projects</h2>
+        <div className="h-0.5 w-20 bg-primary mb-6"></div>
+      </div>
+
       {isLoadingProjects ? (
-        <p>Loading projects...</p>
+        <div className="flex justify-center py-12">
+          <Spinner size="lg" />
+        </div>
       ) : projects.length === 0 ? (
-        <p>No projects found. Start by creating a new one!</p>
+        <Card className="p-8 text-center bg-muted/30">
+          <CardContent>
+            <p className="text-xl">No projects found. Start by creating a new one!</p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <Card key={project.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card key={project.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-primary/10">
+              <CardHeader className="bg-primary/5 pb-2">
                 <CardTitle className="truncate">{project.name || 'Project ' + project.id.substring(0,8)}</CardTitle>
                 <CardDescription>Created: {new Date(project.createdAt).toLocaleDateString()}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="outline" onClick={() => navigate(`/project/${project.id}`)} className="w-full">
+              <CardContent className="pt-4 pb-2">
+                <p className="line-clamp-3 text-sm text-muted-foreground">
+                  {project.messages[0]?.content || 'No description available.'}
+                </p>
+              </CardContent>
+              <CardFooter className="pt-2 pb-4">
+                <Button
+                  variant="default"
+                  onClick={() => navigate(`/project/${project.id}`)}
+                  className="w-full"
+                >
                   Open Project
                 </Button>
-              </CardContent>
+              </CardFooter>
             </Card>
           ))}
         </div>
