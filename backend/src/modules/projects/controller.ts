@@ -8,6 +8,7 @@ import { AnthropicClient, AnthropicMessageEvent } from '../../services/anthropic
 import { CreateProjectInput, ProjectOutput } from './schema.js';
 import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
+import { BuildEvent } from '../../types.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
@@ -34,7 +35,6 @@ export async function createProject(input: CreateProjectInput): Promise<{ projec
 
   // Create the project workspace
   await buildService.createProject(project.id);
-  await buildService.buildProject(project.id);
 
   return { projectId: project.id };
 }
@@ -208,13 +208,6 @@ export async function processAIResponse(
   }
 }
 
-export interface BuildEvent {
-  type: string; // e.g., 'start', 'progress', 'preview-ready', 'error'
-  projectId: string;
-  message?: string;
-  // Add other relevant event properties if known
-}
-
 /**
  * Handles build events for a project
  */
@@ -226,25 +219,4 @@ export function handleBuildEvents(projectId: string, callback: (event: BuildEven
   });
   // Placeholder if BuildService is not active or its event structure is unknown
   // console.warn('handleBuildEvents is a placeholder as BuildService integration might be incomplete.');
-}
-
-/**
- * Apply AI-generated edits to a project
- */
-export async function applyEdits(projectId: string, content: string): Promise<void> {
-  // Parse edits from the AI response
-  const edits = buildService.parseEdits(content);
-  // console.warn('applyEdits is a placeholder as BuildService integration might be incomplete for now.');
-
-  if (edits.length === 0) {
-    console.log(`No actionable edits found in content for project ${projectId}`);
-    return;
-  }
-
-  // Apply edits to the project
-  await buildService.applyEdits(projectId, edits);
-  // After applying edits, it's common to trigger a new build.
-  // Depending on the flow, this might be handled by an event listener or directly.
-  // For now, let's assume applyEdits might trigger a build internally or emit an event that leads to a build.
-  console.log(`Edits applied for project ${projectId}. A rebuild might be necessary and handled by BuildService or subsequent logic.`);
 }

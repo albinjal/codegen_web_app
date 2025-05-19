@@ -4,14 +4,6 @@ import { join, dirname, resolve, sep, relative } from 'path';
 import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
 
-// Event types
-export interface BuildEvent {
-  type: 'preview-ready' | 'error' | 'progress' | 'file_created' | 'file_viewed' | 'file_edited';
-  projectId: string;
-  message?: string;
-  data?: any;
-}
-
 export class BuildService extends EventEmitter {
   private workspaceDir: string;
   private templateDir: string;
