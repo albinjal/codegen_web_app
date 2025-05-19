@@ -18,7 +18,7 @@
 * **Fail fast & loudly** — surface invalid input/state early.
 * **Automate the boring** — formatter, linter, tests in pre‑commit.
 * **Document intent, not implementation** — code shows *how*; comments explain *why*.
-* **Consistency is king** — when changing behaviour, update code, tests & docs together.
+* **Consistency is king** — Important: when changing behaviour, update code, tests & docs together.
 
 ---
 
@@ -59,7 +59,7 @@
 * Write tests next to code (`__tests__` or `*.test.ts`).
 * Target meaningful coverage rather than a % number.
 * Code reviews focus on correctness, clarity, future maintainability.
-* Use vitest for testing.
+* Use vitest for testing. Focus on integration tests, not unit tests. Avoid too much mocking.
 
 ---
 
