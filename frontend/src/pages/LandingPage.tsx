@@ -43,7 +43,7 @@ const LandingPage: React.FC = () => {
     if (isCreatingProject && creationStep < CREATION_STEPS.length - 1) {
       timeout = setTimeout(() => {
         setCreationStep(prev => prev + 1);
-      }, 1200); // Advance to next step every 1.2 seconds for the visual effect
+      }, 2000); // Advance to next step every 1.2 seconds for the visual effect
     }
     return () => clearTimeout(timeout);
   }, [isCreatingProject, creationStep]);

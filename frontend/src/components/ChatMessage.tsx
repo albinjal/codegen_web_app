@@ -340,8 +340,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted',
-                i > 0 ? 'mt-2' : '',
-                pending ? 'opacity-60' : ''
+                i > 0 ? 'mt-2' : ''
               )}
             >
               {seg.content}
