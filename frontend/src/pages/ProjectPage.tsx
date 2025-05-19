@@ -312,8 +312,8 @@ const ProjectPage: React.FC = () => {
           {project.name || `Project ${project.id.substring(0,8)}`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0 h-full overflow-hidden">
-        <ScrollArea className="flex-grow px-4 py-4">
+      <CardContent className="flex-1 flex flex-col p-0 h-full min-h-0 overflow-hidden">
+        <ScrollArea className="flex-grow min-h-0 px-4 py-4 overflow-y-auto">
           {allMessages.map((msg) => (
             <ChatMessage
               key={msg.id}

@@ -4,6 +4,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, FileCode, CodeIcon, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -129,6 +131,26 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
   return segments;
 };
 
+// Helper to guess language from file extension
+function guessLanguageFromPath(path?: string): string {
+  if (!path) return 'text';
+  if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript';
+  if (path.endsWith('.js') || path.endsWith('.jsx')) return 'javascript';
+  if (path.endsWith('.json')) return 'json';
+  if (path.endsWith('.css')) return 'css';
+  if (path.endsWith('.html')) return 'html';
+  if (path.endsWith('.md')) return 'markdown';
+  if (path.endsWith('.py')) return 'python';
+  if (path.endsWith('.sh')) return 'bash';
+  if (path.endsWith('.yml') || path.endsWith('.yaml')) return 'yaml';
+  return 'text';
+}
+
+// Utility to strip triple backtick code block markers and language tags from code
+function stripCodeBlockMarkersFromCode(code: string): string {
+  return code.replace(/```[a-zA-Z0-9]*\n([\s\S]*?)```/g, '$1').replace(/```([\s\S]*?)```/g, '$1');
+}
+
 // Component for displaying tool operations
 const ToolOperation: React.FC<{ type: string; code?: string; path?: string; details?: any; loading?: boolean }> = ({
   type, code, path, details, loading
@@ -189,13 +211,38 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
         <div className="p-3 bg-muted/20 max-h-[300px] overflow-auto">
           {loading && <ShimmerBar />}
           {type === 'create_file' ? (
-            <pre className={"text-xs transition-colors duration-300" + (loading ? ' text-muted-foreground' : '')}>
-              <code>{details?.content || code}</code>
-            </pre>
+            <SyntaxHighlighter
+              language={guessLanguageFromPath(path)}
+              style={prism}
+              customStyle={{ borderRadius: 8, margin: '0', fontSize: 14 }}
+              showLineNumbers={false}
+            >
+              {stripCodeBlockMarkersFromCode(details?.content || code || '')}
+            </SyntaxHighlighter>
           ) : (
-            <div className="text-xs">
-              <div><b>Old:</b> <pre className="inline whitespace-pre-wrap">{details?.oldStr}</pre></div>
-              <div><b>New:</b> <pre className="inline whitespace-pre-wrap">{details?.newStr}</pre></div>
+            <div className="text-xs font-mono space-y-2">
+              <div className="bg-red-100 rounded p-2 whitespace-pre-wrap">
+                <b className="text-red-700">Old:</b>
+                <SyntaxHighlighter
+                  language={guessLanguageFromPath(path)}
+                  style={prism}
+                  customStyle={{ borderRadius: 8, margin: '0', fontSize: 14, background: 'transparent' }}
+                  showLineNumbers={false}
+                >
+                  {stripCodeBlockMarkersFromCode(details?.oldStr || '')}
+                </SyntaxHighlighter>
+              </div>
+              <div className="bg-green-100 rounded p-2 whitespace-pre-wrap">
+                <b className="text-green-700">New:</b>
+                <SyntaxHighlighter
+                  language={guessLanguageFromPath(path)}
+                  style={prism}
+                  customStyle={{ borderRadius: 8, margin: '0', fontSize: 14, background: 'transparent' }}
+                  showLineNumbers={false}
+                >
+                  {stripCodeBlockMarkersFromCode(details?.newStr || '')}
+                </SyntaxHighlighter>
+              </div>
             </div>
           )}
           {loading && (
@@ -268,6 +315,75 @@ const LoadingDots: React.FC = () => {
   }, []);
   return <span className="ml-1 text-primary">{'.'.repeat(dotCount)}</span>;
 };
+
+// Utility to strip all triple backticks and language tags from text (for chat messages)
+function stripAllCodeBlockMarkers(text: string): string {
+  // Remove all ```lang\n...``` and ```...```
+  return text.replace(/```[a-zA-Z0-9]*\n([\s\S]*?)```/g, '$1').replace(/```([\s\S]*?)```/g, '$1');
+}
+
+// Utility to render text with syntax-highlighted code blocks
+function renderWithCodeBlocks(text: string) {
+  // Regex to match ```lang\n...```
+  const codeBlockRegex = /```([a-zA-Z0-9]*)\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match;
+  const elements: React.ReactNode[] = [];
+  let idx = 0;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(
+        <span key={idx++}>{text.slice(lastIndex, match.index)}</span>
+      );
+    }
+    const lang = match[1] || 'text';
+    const code = match[2];
+    elements.push(
+      <SyntaxHighlighter
+        key={idx++}
+        language={lang}
+        style={prism}
+        customStyle={{ borderRadius: 8, margin: '12px 0', fontSize: 14 }}
+        showLineNumbers={false}
+      >
+        {code}
+      </SyntaxHighlighter>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    elements.push(<span key={idx++}>{text.slice(lastIndex)}</span>);
+  }
+  return elements;
+}
+
+// Utility to render text with plain code blocks (no syntax highlighting)
+function renderWithPlainCodeBlocks(text: string) {
+  // Regex to match ```lang\n...```
+  const codeBlockRegex = /```([a-zA-Z0-9]*)\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match;
+  const elements: React.ReactNode[] = [];
+  let idx = 0;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(
+        <span key={idx++}>{text.slice(lastIndex, match.index)}</span>
+      );
+    }
+    const code = match[2];
+    elements.push(
+      <pre key={idx++} className="bg-muted rounded p-3 my-2 overflow-x-auto text-xs">
+        <code>{code}</code>
+      </pre>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    elements.push(<span key={idx++}>{text.slice(lastIndex)}</span>);
+  }
+  return elements;
+}
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   role, content, timestamp, isStreaming, pending, isLoadingDots
@@ -343,7 +459,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 i > 0 ? 'mt-2' : ''
               )}
             >
-              {seg.content}
+              {role === 'assistant' ? stripAllCodeBlockMarkers(seg.content) : seg.content}
             </div>
           )
         )}
