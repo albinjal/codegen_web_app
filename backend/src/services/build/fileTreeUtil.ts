@@ -1,5 +1,6 @@
 import { readdir, stat, readFile } from 'fs/promises';
 import { join, relative, resolve, sep } from 'path';
+import { env } from '../../config/env.js';
 
 // Default ignore patterns from template .gitignore
 const DEFAULT_IGNORE = [
@@ -10,6 +11,17 @@ const DEFAULT_IGNORE = [
   'logs',
   'temp',
 ];
+
+/**
+ * Helper function to get the absolute path to a specific project's workspace.
+ */
+function getAbsoluteProjectWorkspacePath(projectId: string): string {
+  // env.WORKSPACE_DIR is expected to be relative to process.cwd()
+  // e.g., if cwd is /app, WORKSPACE_DIR might be 'backend/workspace'
+  // or if cwd is /app/backend, WORKSPACE_DIR might be 'workspace'
+  const baseWorkspaceDir = resolve(process.cwd(), env.WORKSPACE_DIR);
+  return join(baseWorkspaceDir, projectId);
+}
 
 /**
  * Recursively builds a file tree string for a given directory, ignoring specified patterns.
@@ -25,10 +37,11 @@ async function buildTree(dir: string, baseDir: string, ignore: string[], prefix 
     const isLast = i === entries.length - 1;
     const pointer = isLast ? '└── ' : '├── ';
     const entryPath = join(dir, entry.name);
-    const relPath = relative(baseDir, entryPath);
+    // No longer need relPath for tree string generation here, path in output is just entry.name
     tree += `${prefix}${pointer}${entry.name}`;
     if (entry.isDirectory()) {
-      tree += '/\n';
+      tree += '/'; // Keep trailing slash for directories in tree view
+      tree += '\n';
       tree += await buildTree(entryPath, baseDir, ignore, prefix + (isLast ? '    ' : '│   '));
     } else {
       tree += '\n';
@@ -46,25 +59,26 @@ export async function getProjectFileTree(
   projectId: string,
   ignore: string[] = DEFAULT_IGNORE
 ): Promise<string> {
-  const workspaceRoot = join(process.cwd(), 'backend', 'workspace', projectId);
-  return buildTree(workspaceRoot, workspaceRoot, ignore);
+  const projectWorkspaceAbsPath = getAbsoluteProjectWorkspacePath(projectId);
+  return buildTree(projectWorkspaceAbsPath, projectWorkspaceAbsPath, ignore);
 }
 
 /**
  * Ensures that the given absolutePath is within the project workspace directory for the given projectId.
  * Throws an error if the path is outside the project directory (prevents path traversal attacks).
  * @param projectId The project folder name in workspace
- * @param absolutePath The absolute path to check
+ * @param checkAbsolutePath The absolute path to check
  */
-export function ensurePathInProject(projectId: string, absolutePath: string): void {
-  const projectRoot = join(process.cwd(), 'backend', 'workspace', projectId);
-  const resolvedProjectRoot = resolve(projectRoot);
-  const resolvedAbsolutePath = resolve(absolutePath);
+export function ensurePathInProject(projectId: string, checkAbsolutePath: string): void {
+  const projectRootAbsPath = getAbsoluteProjectWorkspacePath(projectId);
+  const resolvedProjectRoot = resolve(projectRootAbsPath); // Normalize project root path
+  const resolvedCheckPath = resolve(checkAbsolutePath); // Normalize path to check
+
   if (
-    !resolvedAbsolutePath.startsWith(resolvedProjectRoot + sep) &&
-    resolvedAbsolutePath !== resolvedProjectRoot
+    !resolvedCheckPath.startsWith(resolvedProjectRoot + sep) &&
+    resolvedCheckPath !== resolvedProjectRoot
   ) {
-    throw new Error(`Path '${absolutePath}' is outside the project workspace for project '${projectId}'.`);
+    throw new Error(`Path '${checkAbsolutePath}' is outside the project workspace for project '${projectId}'.`);
   }
 }
 
@@ -76,9 +90,9 @@ export function ensurePathInProject(projectId: string, absolutePath: string): vo
  * @returns The content of the file as a string
  */
 export async function readFileInProject(projectId: string, relativeFilePath: string): Promise<string> {
-  const projectRoot = join(process.cwd(), 'backend', 'workspace', projectId);
-  const absoluteFilePath = resolve(projectRoot, relativeFilePath);
-  ensurePathInProject(projectId, absoluteFilePath); // Safety check
+  const projectWorkspaceAbsPath = getAbsoluteProjectWorkspacePath(projectId);
+  const absoluteFilePath = resolve(projectWorkspaceAbsPath, relativeFilePath);
+  ensurePathInProject(projectId, absoluteFilePath); // Safety check using the resolved absolute path
   return readFile(absoluteFilePath, 'utf-8');
 }
 
@@ -114,12 +128,12 @@ export async function getAllProjectFilesContent(
   projectId: string,
   ignore: string[] = DEFAULT_IGNORE
 ): Promise<string> {
-  const workspaceRoot = join(process.cwd(), 'backend', 'workspace', projectId);
-  const allFiles = await collectFilePaths(workspaceRoot, workspaceRoot, ignore);
+  const projectWorkspaceAbsPath = getAbsoluteProjectWorkspacePath(projectId);
+  const allFiles = await collectFilePaths(projectWorkspaceAbsPath, projectWorkspaceAbsPath, ignore);
   let output = '';
   for (const filePath of allFiles) {
     try {
-      const content = await readFileInProject(projectId, filePath);
+      const content = await readFileInProject(projectId, filePath); // readFileInProject takes relative path
       output += `<file path="${filePath}">\n${content}\n</file>\n`;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

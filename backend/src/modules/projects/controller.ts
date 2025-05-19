@@ -184,20 +184,18 @@ export async function processAIResponse(
 
   // Format messages for Anthropic API
   const formattedMessages = messages.map((msg, index) => {
-    let currentContent = msg.content;
-    if (index === messages.length - 1 && msg.role === 'user') {
-      currentContent = globalAnthropicClient.formatPrompt(msg.content);
-    }
+    // The detailed system prompt with file context is now handled by AnthropicClient.streamMessage
+    // No need to call formatPrompt here.
     return {
       role: msg.role as 'user' | 'assistant',
-      content: currentContent
+      content: msg.content // Pass raw content
     };
   });
 
   try {
     // Stream the AI response using the local client instance
     // streamMessage is async and will resolve when the stream is fully processed by its internal loop.
-    await localAnthropicClient.streamMessage(formattedMessages);
+    await localAnthropicClient.streamMessage(projectId, formattedMessages); // Pass projectId as the first argument
   } catch (error) {
     console.error(`Error calling localAnthropicClient.streamMessage for project ${projectId}:`, error);
     serverEvents.emit(`ai_error_${projectId}`, {
