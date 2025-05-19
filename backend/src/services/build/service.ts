@@ -128,9 +128,6 @@ export class BuildService extends EventEmitter {
 
       await subprocess;
 
-      // Update static file path mapping to point to the React build output
-      const distDir = join(projectDir, 'dist');
-
       this.emit('build', {
         type: 'progress',
         projectId,
@@ -139,6 +136,28 @@ export class BuildService extends EventEmitter {
     } catch (error) {
       console.error('Error building project:', error);
       throw new Error(`Build failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Public method to rebuild a project
+   */
+  async rebuildProject(projectId: string): Promise<void> {
+    try {
+      await this.buildProject(projectId);
+      this.emit('build', {
+        type: 'preview-ready',
+        projectId,
+        message: 'Project rebuilt successfully'
+      });
+    } catch (error) {
+      console.error('Error rebuilding project:', error);
+      this.emit('build', {
+        type: 'error',
+        projectId,
+        message: `Rebuild failed: ${error instanceof Error ? error.message : String(error)}`
+      });
+      throw error;
     }
   }
 
@@ -167,56 +186,6 @@ export class BuildService extends EventEmitter {
       console.error(errorMessage, error);
       this.emit('build', { type: 'error', projectId, message: errorMessage });
       // Anthropic expects a string result, even for errors, to send back to the model.
-      return `Error: ${errorMessage}`;
-    }
-  }
-
-  /**
-   * Handles the 'view' command from the Anthropic text editor tool.
-   * Reads the content of a file or lists directory contents within the project's workspace.
-   * viewRange: [startLine, endLine] (1-indexed, endLine -1 for EOF)
-   */
-  async handleEditorViewCommand(projectId: string, relativePath: string, viewRange?: [number, number]): Promise<string> {
-    try {
-      const absolutePath = await this.getValidatedFilePath(projectId, relativePath);
-      const stats = await stat(absolutePath);
-
-      if (stats.isDirectory()) {
-        // For now, we won't implement directory listing via this command as Anthropic examples focus on files.
-        // If needed, this is where `fs.readdir` would go, formatted appropriately.
-        const message = `Viewing directories is not currently supported via this command. Path: ${relativePath}`;
-        this.emit('build', { type: 'progress', projectId, message});
-        return message; // Or an error string if preferred
-      }
-
-      // Handle file viewing
-      let fileContent = await readFile(absolutePath, 'utf-8');
-      const lines = fileContent.split('\n');
-
-      if (viewRange && viewRange.length === 2) {
-        let [startLine, endLine] = viewRange;
-        startLine = Math.max(1, startLine); // Ensure start is at least 1
-        if (endLine === -1 || endLine > lines.length) {
-          endLine = lines.length;
-        }
-        // Slice operates on 0-indexed, and end is exclusive
-        fileContent = lines.slice(startLine - 1, endLine).map((line, index) => `${startLine + index}: ${line}`).join('\n');
-      } else {
-        // If no range, or invalid range, return full content with line numbers (as per Anthropic example)
-        fileContent = lines.map((line, index) => `${index + 1}: ${line}`).join('\n');
-      }
-
-      this.emit('build', {
-        type: 'file_viewed',
-        projectId,
-        message: `File viewed: ${relativePath}`,
-        data: { path: relativePath, content: fileContent } // Consider if sending full content in event is wise for large files
-      });
-      return fileContent;
-    } catch (error) {
-      const errorMessage = `Failed to view '${relativePath}' for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`;
-      console.error(errorMessage, error);
-      this.emit('build', { type: 'error', projectId, message: errorMessage });
       return `Error: ${errorMessage}`;
     }
   }
@@ -267,52 +236,4 @@ export class BuildService extends EventEmitter {
       return `Error: ${errorMessage}`;
     }
   }
-
-  /**
-   * Handles the 'insert' command from the Anthropic text editor tool.
-   * Inserts text at a specific line number in a file.
-   * insertLine: 0 for beginning of file. Anthropic: "line number after which to insert"
-   */
-  async handleEditorInsertCommand(projectId: string, relativeFilePath: string, insertLine: number, newText: string): Promise<string> {
-    try {
-      const absoluteFilePath = await this.getValidatedFilePath(projectId, relativeFilePath);
-      const originalContent = await readFile(absoluteFilePath, 'utf-8');
-      const lines = originalContent.split('\n');
-
-      // insertLine is 0 for beginning, 1 to insert after line 1, etc.
-      // If insertLine is 0, newText is at the beginning.
-      // If insertLine is N, newText is after line N (so it becomes line N+1, content of line N+1 shifts to N+2 etc).
-      // lines.splice(index, deleteCount, ...itemsToAdd)
-      // So if insertLine is 0, splice at index 0.
-      // If insertLine is 1 (after line 1), splice at index 1.
-      const lineIndexToInsertAt = Math.max(0, Math.min(insertLine, lines.length));
-
-      lines.splice(lineIndexToInsertAt, 0, newText);
-      const newContent = lines.join('\n');
-
-      await writeFile(absoluteFilePath, newContent, 'utf-8');
-      const successMessage = `Successfully inserted text into ${relativeFilePath} at line ${insertLine}.`;
-      this.emit('build', {
-        type: 'file_edited',
-        projectId,
-        message: successMessage,
-        data: { path: relativeFilePath, insertLine, newText }
-      });
-      console.log(`${successMessage} (Project: ${projectId})`);
-      return successMessage;
-    } catch (error) {
-      const errorMessage = `Failed to insert text into '${relativeFilePath}' for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`;
-      console.error(errorMessage, error);
-      this.emit('build', { type: 'error', projectId, message: errorMessage });
-      return `Error: ${errorMessage}`;
-    }
-  }
-
-  // Placeholder for undo_edit if needed in the future
-  // async handleEditorUndoCommand(projectId: string, relativeFilePath: string): Promise<string> {
-  //   // This would require storing previous versions or diffs, which is complex.
-  //   const message = "Undo command is not yet implemented.";
-  //   this.emit('build', { type: 'progress', projectId, message });
-  //   return message;
-  // }
 }

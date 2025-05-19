@@ -9,6 +9,7 @@ import { CreateProjectInput, ProjectOutput } from './schema.js';
 import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
 import { BuildEvent } from '../../types.js';
+import { ToolParser, ToolCall } from '../../services/build/toolParser.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
@@ -142,6 +143,7 @@ export async function processAIResponse(
   anthropicApiKey: string | undefined
 ): Promise<void> {
   const localAnthropicClient = new AnthropicClient(anthropicApiKey || env.ANTHROPIC_API_KEY);
+  const buildService = new BuildService(); // Create an instance of BuildService
 
   // Setup listeners for this specific Anthropic call
   localAnthropicClient.on('message', (event: AnthropicMessageEvent) => {
@@ -152,17 +154,24 @@ export async function processAIResponse(
       serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: event.error, projectId });
     } else if (event.type === 'complete') {
       if (event.content) {
-        prismaInstance.message.create({
-          data: {
-            projectId: projectId,
-            role: 'assistant',
-            content: event.content,
-          }
-        }).then(savedMessage => {
-          serverEvents.emit(`ai_complete_${projectId}`, { type: 'complete', message: savedMessage, projectId });
-        }).catch(dbError => {
-          console.error(`Failed to save assistant message for project ${projectId}:`, dbError);
-          serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: 'Failed to save assistant message.', projectId });
+        // Process tool calls before saving the message
+        handleToolCalls(event.content, projectId, buildService, serverEvents).then(() => {
+          // After processing tool calls, save the message
+          prismaInstance.message.create({
+            data: {
+              projectId: projectId,
+              role: 'assistant',
+              content: event.content || '',
+            }
+          }).then(savedMessage => {
+            serverEvents.emit(`ai_complete_${projectId}`, { type: 'complete', message: savedMessage, projectId });
+          }).catch(dbError => {
+            console.error(`Failed to save assistant message for project ${projectId}:`, dbError);
+            serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: 'Failed to save assistant message.', projectId });
+          });
+        }).catch(toolError => {
+          console.error(`Error processing tool calls for project ${projectId}:`, toolError);
+          serverEvents.emit(`ai_error_${projectId}`, { type: 'error', error: 'Error processing tool calls.', projectId });
         });
       } else {
         // Handle cases where completion might be empty but still signifies end
@@ -184,8 +193,6 @@ export async function processAIResponse(
 
   // Format messages for Anthropic API
   const formattedMessages = messages.map((msg, index) => {
-    // The detailed system prompt with file context is now handled by AnthropicClient.streamMessage
-    // No need to call formatPrompt here.
     return {
       role: msg.role as 'user' | 'assistant',
       content: msg.content // Pass raw content
@@ -194,8 +201,7 @@ export async function processAIResponse(
 
   try {
     // Stream the AI response using the local client instance
-    // streamMessage is async and will resolve when the stream is fully processed by its internal loop.
-    await localAnthropicClient.streamMessage(projectId, formattedMessages); // Pass projectId as the first argument
+    await localAnthropicClient.streamMessage(projectId, formattedMessages);
   } catch (error) {
     console.error(`Error calling localAnthropicClient.streamMessage for project ${projectId}:`, error);
     serverEvents.emit(`ai_error_${projectId}`, {
@@ -203,6 +209,105 @@ export async function processAIResponse(
       error: error instanceof Error ? error.message : 'Anthropic stream initiation failed',
       projectId
     });
+  }
+}
+
+/**
+ * Execute a single tool call
+ */
+async function executeToolCall(
+  toolCall: ToolCall,
+  projectId: string,
+  buildService: BuildService,
+  serverEvents: EventEmitter
+): Promise<void> {
+  try {
+    switch (toolCall.tool) {
+      case 'create_file': {
+        const { path, content } = toolCall.parameters;
+        if (!path || !content) {
+          throw new Error('Missing required parameters for create_file tool');
+        }
+
+        // Explicitly ensure path and content are strings
+        const pathStr = String(path);
+        const contentStr = String(content);
+
+        const result = await buildService.handleEditorCreateCommand(
+          projectId,
+          pathStr,
+          contentStr
+        );
+
+        console.log(`create_file result for ${pathStr}:`, result);
+        break;
+      }
+
+      case 'str_replace': {
+        const { path, old_str, new_str } = toolCall.parameters;
+        if (!path || !old_str || !new_str) {
+          throw new Error('Missing required parameters for str_replace tool');
+        }
+
+        // Explicitly ensure parameters are strings
+        const pathStr = String(path);
+        const oldStrValue = String(old_str);
+        const newStrValue = String(new_str);
+
+        const result = await buildService.handleEditorStrReplaceCommand(
+          projectId,
+          pathStr,
+          oldStrValue,
+          newStrValue
+        );
+
+        console.log(`str_replace result for ${pathStr}:`, result);
+        break;
+      }
+
+      default:
+        console.warn(`Unknown tool "${toolCall.tool}" called for project ${projectId}`);
+    }
+  } catch (error) {
+    console.error(`Error executing tool call "${toolCall.tool}" for project ${projectId}:`, error);
+    serverEvents.emit('build', {
+      type: 'error',
+      projectId,
+      message: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+    });
+  }
+}
+
+/**
+ * Process tool calls from the AI response
+ */
+async function handleToolCalls(
+  content: string,
+  projectId: string,
+  buildService: BuildService,
+  serverEvents: EventEmitter
+): Promise<void> {
+  // Parse tool calls from the content
+  const toolCalls = ToolParser.parseToolCalls(content);
+
+  if (toolCalls.length === 0) {
+    console.log(`No tool calls found in response for project ${projectId}`);
+    return;
+  }
+
+  console.log(`Found ${toolCalls.length} tool call(s) in response for project ${projectId}`);
+
+  // Process each tool call sequentially
+  for (const toolCall of toolCalls) {
+    await executeToolCall(toolCall, projectId, buildService, serverEvents);
+  }
+
+  // Rebuild the project after all tool calls are processed
+  try {
+    await buildService.rebuildProject(projectId);
+  } catch (error) {
+    console.error(`Error rebuilding project ${projectId} after tool execution:`, error);
+    // Error events are already emitted by rebuildProject
   }
 }
 
