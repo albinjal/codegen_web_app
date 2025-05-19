@@ -31,7 +31,7 @@
   - Responsibilities:
     - [x] Copy the React template from `backend/template` into `workspace/{project_id}` when a project is created.
     - [x] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
-    - [x] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
+    - [x] After each `<edit>` or tool call round, rebuild and serve files from `/preview/{id}/dist`.
 
 - [x] **Anthropic Integration**
 
@@ -50,15 +50,19 @@
     - [x] Create DB entries for the new project and first user message.
     - [x] Respond with JSON `{projectId}`.
     - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
-    - [ ] Start BuildService to set up workspace and run initial build (BuildService integration pending).
+    - [x] Start BuildService to set up workspace and run initial build (**now integrated**).
   - [x] On `POST /api/projects/:id/messages`:
     - [x] Save user message.
     - [x] Respond with JSON `{messageId}`.
     - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
-    - [ ] Apply code edits, rebuild (BuildService integration pending).
+    - [x] Apply code edits, parse and execute tool calls, rebuild (**now integrated**).
   - [x] SSE (`GET /api/projects/:id/stream`):
     - [x] Sends historic messages on connect.
     - [x] Listens for project-specific AI events from `serverEvents` and forwards them to the client.
+
+- [x] **AI Tooling Protocol**
+  - [x] System prompt instructs AI to use XML tool tags for file operations.
+  - [x] Backend parses and executes tool calls, then rebuilds project.
 
 - [x] **Static Preview Serving**
 
@@ -82,4 +86,4 @@
 - [x] **Documentation**
   - [x] Keep README minimal and place detailed docs in project_description.
   - [x] Update architecture documentation to reflect the current project structure.
-  - [ ] Document API usage, how to run dev servers, and how to extend template projects.
+  - [x] Document API usage, how to run dev servers, and how to extend template projects.

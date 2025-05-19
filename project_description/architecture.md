@@ -75,8 +75,8 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
 | ------------------- | --------------------------------------------------------------------------- | -------------------------------- |
 | **Frontend**        | Chat UI, project list, iframe preview; dev‑time proxy                       | React, Vite, Tailwind, shadcn/ui |
 | **Backend API**     | `/api/*` routes, SSE, static preview + SPA serving                          | Fastify 4, @fastify/static, zod  |
-| **BuildService**    | Parse `<edit>` XML, write files, execute `vite build`, emit `preview‑ready` | `execa`, chokidar (optional)     |
-| **AnthropicClient** | Wrap TS SDK, stream tokens                                                  | `@anthropic-ai/sdk`              |
+| **BuildService**    | Parse `<edit>`, `<create_file>`, `<str_replace>` XML tool calls, write files, execute `vite build`, emit `preview‑ready` | `execa`, custom tool parser      |
+| **AnthropicClient** | Wrap TS SDK, stream tokens, emits tool calls as XML in responses            | `@anthropic-ai/sdk`              |
 | **Database**        | Store Project & Message rows                                                | Prisma + SQLite                  |
 | **Workspace FS**    | `backend/workspace/{project_id}` with React project files + `dist/` build   | Local filesystem                 |
 
@@ -113,9 +113,10 @@ model Message {
       1. Fetching message history.
       2. Sending prompt to Anthropic.
       3. Receiving AI response (streaming).
-      4. Saving the complete assistant message to the DB.
-      5. Emitting project-specific events (e.g., `ai_content_<projectId>`, `ai_complete_<projectId>`) via a server-side event emitter.
-   4. (BuildService, if active) Makes workspace dir from `backend/template`, runs initial `vite build` → `workspace/{id}/dist`.
+      4. **Parsing tool calls**: The AI can emit tool calls in XML tags (e.g., `<create_file>`, `<str_replace>`) in its response. The backend parses these tool calls, executes them (file creation, string replacement), and rebuilds the project if needed.
+      5. Saving the complete assistant message to the DB.
+      6. Emitting project-specific events (e.g., `ai_content_<projectId>`, `ai_complete_<projectId>`) via a server-side event emitter.
+   4. (BuildService) Makes workspace dir from `backend/template`, runs initial `vite build` → `workspace/{id}/dist`.
 3. Frontend, upon receiving `{ projectId }`:
    1. Navigates to the project page (`/project/:id`).
    2. Establishes an SSE connection to `GET /api/projects/:id/stream`.
@@ -127,11 +128,23 @@ model Message {
    1. Saves the user message in the DB.
    2. Responds with `{ messageId }`.
    3. Asynchronously, triggers AI processing for the new message (similar to step 2.3).
+   4. **Parses and executes tool calls, then rebuilds project as needed.**
 6. Frontend's existing SSE stream (`GET /api/projects/:id/stream`) receives the `ai_content` and `ai_complete` events for the new response.
 
 ---
 
-## 6  HTTP Surface
+## 6  AI Tooling Protocol
+
+> **AI Tooling Protocol:**
+> The backend system prompt instructs the AI to use XML tags for tool calls. Supported tools include:
+> - `<create_file path="...">...</create_file>`: Create a new file with the given content.
+> - `<str_replace path="..." old_str="..." new_str="...">...</str_replace>`: Replace a string in a file.
+>
+> The backend parses these tags, executes the requested actions, and rebuilds the project as needed. Multiple tool calls can be included in a single response.
+
+---
+
+## 7  HTTP Surface
 
 | Method | Path                         | Purpose                                                     | Response Type |
 | ------ | ---------------------------- | ----------------------------------------------------------- | ------------- |
@@ -145,22 +158,8 @@ model Message {
 
 ---
 
-## 7  Module Structure
+## 8  Module Structure
 
 Each feature module follows this structure:
 
 ```
-📁 module-name/
-  📄 controller.ts    # Business logic and data access
-  📄 route.ts         # HTTP route definitions
-  📄 schema.ts        # Data validation with Zod
-  📄 index.ts         # Exports all module components
-```
-
-This structure promotes:
-- **Separation of concerns**: Routes handle HTTP, controllers handle business logic
-- **Testability**: Controllers can be tested without HTTP overhead
-- **Maintainability**: Clear boundaries between different aspects of functionality
-- **Scalability**: Easy to add new modules following the same pattern
-
----
