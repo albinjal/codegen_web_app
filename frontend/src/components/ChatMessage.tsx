@@ -18,44 +18,71 @@ interface BuildStatusProps {
   progress?: number;
 }
 
-// Helper to extract and parse tool operations from message content
-const extractToolOperations = (content: string) => {
-  const operations: { type: string; code: string; path?: string; details?: any }[] = [];
-  let cleanContent = content;
+// Type for message segments
+type TextSegment = { type: 'text'; content: string };
+type ToolSegment = { type: 'tool'; toolType: string; path?: string; details?: any; loading: boolean };
+type MessageSegment = TextSegment | ToolSegment;
 
-  // Match <create_file path="..."> ... </create_file>
+// Helper to split message into segments (text/tool)
+const splitMessageSegments = (content: string, isStreaming: boolean) => {
+  const segments: Array<
+    | { type: 'text'; content: string }
+    | { type: 'tool'; toolType: string; path?: string; details?: any; loading: boolean }
+  > = [];
+
+  let lastIndex = 0;
+
+  // Regex for create_file
   const createFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*?)<\/create_file>/g;
-  cleanContent = cleanContent.replace(createFileRegex, (match, path, fileContent) => {
-    operations.push({
-      type: 'create_file',
-      code: fileContent.trim(),
-      path,
-      details: { path, content: fileContent.trim() }
-    });
-    return '';
-  });
-
-  // Match <str_replace path="..." old_str="..." new_str="..."> </str_replace>
+  // Regex for str_replace
   const strReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
-  cleanContent = cleanContent.replace(strReplaceRegex, (match, path, oldStr, newStr) => {
-    operations.push({
-      type: 'str_replace',
-      code: '',
-      path,
-      details: { path, oldStr, newStr }
-    });
-    return '';
-  });
 
-  return {
-    operations,
-    cleanContent: cleanContent.trim()
-  };
+  // Merge both regexes for a global scan
+  const combinedRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*?)<\/create_file>|<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
+
+  let match;
+  let lastToolEnd = 0;
+  while ((match = combinedRegex.exec(content)) !== null) {
+    // Text before this tool call
+    if (match.index > lastToolEnd) {
+      const text = content.slice(lastToolEnd, match.index);
+      if (text.trim()) segments.push({ type: 'text', content: text });
+    }
+    if (match[0].startsWith('<create_file')) {
+      const path = match[1];
+      const fileContent = match[2];
+      segments.push({
+        type: 'tool',
+        toolType: 'create_file',
+        path,
+        details: { path, content: fileContent.trim() },
+        loading: isStreaming // If streaming, show as loading
+      });
+    } else if (match[0].startsWith('<str_replace')) {
+      const path = match[3];
+      const oldStr = match[4];
+      const newStr = match[5];
+      segments.push({
+        type: 'tool',
+        toolType: 'str_replace',
+        path,
+        details: { path, oldStr, newStr },
+        loading: isStreaming
+      });
+    }
+    lastToolEnd = match.index + match[0].length;
+  }
+  // Any text after the last tool call
+  if (lastToolEnd < content.length) {
+    const text = content.slice(lastToolEnd);
+    if (text.trim()) segments.push({ type: 'text', content: text });
+  }
+  return segments;
 };
 
 // Component for displaying tool operations
-const ToolOperation: React.FC<{ type: string; code: string; path?: string; details?: any }> = ({
-  type, code, path, details
+const ToolOperation: React.FC<{ type: string; code?: string; path?: string; details?: any; loading?: boolean }> = ({
+  type, code, path, details, loading
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -100,8 +127,17 @@ const ToolOperation: React.FC<{ type: string; code: string; path?: string; detai
       )}
 
       <div className="px-3 py-2 text-sm bg-primary/5 flex items-center gap-2">
-        <CheckCircle className="h-4 w-4 text-green-500" />
-        <span>Completed successfully</span>
+        {loading ? (
+          <>
+            <Spinner size="sm" />
+            <span>Running...</span>
+          </>
+        ) : (
+          <>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>Completed successfully</span>
+          </>
+        )}
       </div>
     </Card>
   );
@@ -148,9 +184,16 @@ export const BuildStatus: React.FC<BuildStatusProps> = ({ status, message, progr
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   role, content, timestamp, isStreaming
 }) => {
-  // Extract tool operations from assistant messages
-  const { operations, cleanContent } =
-    role === 'assistant' ? extractToolOperations(content) : { operations: [], cleanContent: content };
+  // For assistant, split into segments
+  const segments: MessageSegment[] =
+    role === 'assistant'
+      ? splitMessageSegments(content, !!isStreaming)
+      : [{ type: 'text', content }];
+
+  // Type guard
+  function isToolSegment(seg: MessageSegment): seg is ToolSegment {
+    return seg.type === 'tool';
+  }
 
   return (
     <div className={cn(
@@ -172,39 +215,30 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </span>
         </div>
 
-        <div className={cn(
-          "p-3 rounded-lg",
-          role === 'user'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted'
-        )}>
-          {isStreaming && (
-            <div className="flex items-center gap-2 mb-1">
-              <Spinner size="sm" />
-              <span className="text-xs font-medium">AI is typing...</span>
+        {/* Render segments in order */}
+        {segments.map((seg, i) =>
+          isToolSegment(seg) ? (
+            <ToolOperation
+              key={i}
+              type={seg.toolType}
+              path={seg.path}
+              details={seg.details}
+              loading={!!seg.loading && isStreaming}
+            />
+          ) : (
+            <div
+              key={i}
+              className={cn(
+                "p-3 rounded-lg whitespace-pre-wrap",
+                role === 'user'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted',
+                i > 0 ? 'mt-2' : ''
+              )}
+            >
+              {seg.content}
             </div>
-          )}
-
-          {cleanContent && (
-            <div className="whitespace-pre-wrap">
-              {cleanContent}
-            </div>
-          )}
-        </div>
-
-        {/* Render tool operations after the message content */}
-        {operations.length > 0 && (
-          <div className="mt-2 space-y-2">
-            {operations.map((op, index) => (
-              <ToolOperation
-                key={index}
-                type={op.type}
-                code={op.code}
-                path={op.path}
-                details={op.details}
-              />
-            ))}
-          </div>
+          )
         )}
       </div>
     </div>
