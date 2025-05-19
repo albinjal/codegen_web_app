@@ -10,6 +10,8 @@ interface ChatMessageProps {
   content: string;
   timestamp: string;
   isStreaming?: boolean;
+  pending?: boolean;
+  isLoadingDots?: boolean;
 }
 
 interface BuildStatusProps {
@@ -30,53 +32,100 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
     | { type: 'tool'; toolType: string; path?: string; details?: any; loading: boolean }
   > = [];
 
-  let lastIndex = 0;
+  let lastToolEnd = 0;
+  let workingContent = content;
 
-  // Regex for create_file
+  // Regex for complete create_file
   const createFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*?)<\/create_file>/g;
-  // Regex for str_replace
+  // Regex for complete str_replace
   const strReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
 
-  // Merge both regexes for a global scan
-  const combinedRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*?)<\/create_file>|<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
+  // Regex for incomplete create_file (opening tag, no closing tag)
+  const incompleteCreateFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*)$/;
+  // Regex for incomplete str_replace (opening tag, no closing tag)
+  const incompleteStrReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)['"]>([\s\S]*)$/;
 
+  // First, process all complete tool calls
   let match;
-  let lastToolEnd = 0;
-  while ((match = combinedRegex.exec(content)) !== null) {
-    // Text before this tool call
-    if (match.index > lastToolEnd) {
-      const text = content.slice(lastToolEnd, match.index);
+  let lastIndex = 0;
+  while ((match = createFileRegex.exec(workingContent)) !== null) {
+    if (match.index > lastIndex) {
+      const text = workingContent.slice(lastIndex, match.index);
       if (text.trim()) segments.push({ type: 'text', content: text });
     }
-    if (match[0].startsWith('<create_file')) {
-      const path = match[1];
-      const fileContent = match[2];
-      segments.push({
-        type: 'tool',
-        toolType: 'create_file',
-        path,
-        details: { path, content: fileContent.trim() },
-        loading: isStreaming // If streaming, show as loading
-      });
-    } else if (match[0].startsWith('<str_replace')) {
-      const path = match[3];
-      const oldStr = match[4];
-      const newStr = match[5];
-      segments.push({
-        type: 'tool',
-        toolType: 'str_replace',
-        path,
-        details: { path, oldStr, newStr },
-        loading: isStreaming
-      });
+    const path = match[1];
+    const fileContent = match[2];
+    segments.push({
+      type: 'tool',
+      toolType: 'create_file',
+      path,
+      details: { path, content: fileContent.trim() },
+      loading: isStreaming
+    });
+    lastIndex = match.index + match[0].length;
+  }
+  workingContent = workingContent.slice(lastIndex);
+  lastIndex = 0;
+  while ((match = strReplaceRegex.exec(workingContent)) !== null) {
+    if (match.index > lastIndex) {
+      const text = workingContent.slice(lastIndex, match.index);
+      if (text.trim()) segments.push({ type: 'text', content: text });
     }
-    lastToolEnd = match.index + match[0].length;
+    const path = match[1];
+    const oldStr = match[2];
+    const newStr = match[3];
+    segments.push({
+      type: 'tool',
+      toolType: 'str_replace',
+      path,
+      details: { path, oldStr, newStr },
+      loading: isStreaming
+    });
+    lastIndex = match.index + match[0].length;
   }
-  // Any text after the last tool call
-  if (lastToolEnd < content.length) {
-    const text = content.slice(lastToolEnd);
-    if (text.trim()) segments.push({ type: 'text', content: text });
+  workingContent = workingContent.slice(lastIndex);
+
+  // Now, check for incomplete tool calls at the end of the message
+  let incompleteMatch;
+  if ((incompleteMatch = incompleteCreateFileRegex.exec(workingContent))) {
+    const path = incompleteMatch[1];
+    const partialContent = incompleteMatch[2];
+    // Text before the tag
+    const tagStart = workingContent.indexOf('<create_file');
+    if (tagStart > 0) {
+      const text = workingContent.slice(0, tagStart);
+      if (text.trim()) segments.push({ type: 'text', content: text });
+    }
+    segments.push({
+      type: 'tool',
+      toolType: 'create_file',
+      path,
+      details: { path, content: partialContent },
+      loading: true
+    });
+    return segments;
   }
+  if ((incompleteMatch = incompleteStrReplaceRegex.exec(workingContent))) {
+    const path = incompleteMatch[1];
+    const oldStr = incompleteMatch[2];
+    const newStr = incompleteMatch[3];
+    // Text before the tag
+    const tagStart = workingContent.indexOf('<str_replace');
+    if (tagStart > 0) {
+      const text = workingContent.slice(0, tagStart);
+      if (text.trim()) segments.push({ type: 'text', content: text });
+    }
+    segments.push({
+      type: 'tool',
+      toolType: 'str_replace',
+      path,
+      details: { path, oldStr, newStr },
+      loading: true
+    });
+    return segments;
+  }
+  // Any remaining text
+  if (workingContent.trim()) segments.push({ type: 'text', content: workingContent });
   return segments;
 };
 
@@ -84,17 +133,29 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
 const ToolOperation: React.FC<{ type: string; code?: string; path?: string; details?: any; loading?: boolean }> = ({
   type, code, path, details, loading
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Auto-expand while loading, allow manual collapse after
+  const [isExpanded, setIsExpanded] = useState(!!loading);
+  React.useEffect(() => {
+    if (loading) setIsExpanded(true);
+  }, [loading]);
 
-  // Animated placeholder for loading
-  const LoadingPlaceholder = () => (
-    <div className="animate-pulse space-y-2">
-      <div className="h-4 bg-muted rounded w-3/4" />
-      <div className="h-4 bg-muted rounded w-1/2" />
-      <div className="h-4 bg-muted rounded w-5/6" />
-      <div className="h-4 bg-muted rounded w-2/3" />
+  // Animated shimmer bar for loading
+  const ShimmerBar = () => (
+    <div className="relative w-full h-4 bg-muted/60 overflow-hidden rounded mb-2">
+      <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-shimmer" />
     </div>
   );
+
+  // Animated dots for header
+  const AnimatedDots = () => {
+    const [dotCount, setDotCount] = useState(1);
+    React.useEffect(() => {
+      if (!loading) return;
+      const interval = setInterval(() => setDotCount(d => (d % 3) + 1), 400);
+      return () => clearInterval(interval);
+    }, [loading]);
+    return <span className="ml-1">{'.'.repeat(dotCount)}</span>;
+  };
 
   return (
     <Card className="mb-3 overflow-hidden border-primary/10">
@@ -110,6 +171,7 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
             {type === 'create_file'
               ? `Creating: ${path}`
               : `Editing: ${path}`}
+            {loading && <AnimatedDots />}
           </span>
         </div>
         <Button
@@ -125,13 +187,9 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
 
       {isExpanded && (
         <div className="p-3 bg-muted/20 max-h-[300px] overflow-auto">
-          {loading ? (
-            <>
-              <LoadingPlaceholder />
-              <div className="text-xs text-muted-foreground mt-2">Waiting for AI to finish...</div>
-            </>
-          ) : type === 'create_file' ? (
-            <pre className="text-xs">
+          {loading && <ShimmerBar />}
+          {type === 'create_file' ? (
+            <pre className={"text-xs transition-colors duration-300" + (loading ? ' text-muted-foreground' : '')}>
               <code>{details?.content || code}</code>
             </pre>
           ) : (
@@ -139,6 +197,9 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
               <div><b>Old:</b> <pre className="inline whitespace-pre-wrap">{details?.oldStr}</pre></div>
               <div><b>New:</b> <pre className="inline whitespace-pre-wrap">{details?.newStr}</pre></div>
             </div>
+          )}
+          {loading && (
+            <div className="text-xs text-muted-foreground mt-2">Writing code...</div>
           )}
         </div>
       )}
@@ -198,8 +259,18 @@ export const BuildStatus: React.FC<BuildStatusProps> = ({ status, message, progr
   );
 };
 
+// Animated loading dots for waiting state
+const LoadingDots: React.FC = () => {
+  const [dotCount, setDotCount] = useState(1);
+  React.useEffect(() => {
+    const interval = setInterval(() => setDotCount(d => (d % 3) + 1), 400);
+    return () => clearInterval(interval);
+  }, []);
+  return <span className="ml-1 text-primary">{'.'.repeat(dotCount)}</span>;
+};
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({
-  role, content, timestamp, isStreaming
+  role, content, timestamp, isStreaming, pending, isLoadingDots
 }) => {
   // For assistant, split into segments
   const segments: MessageSegment[] =
@@ -210,6 +281,25 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   // Type guard
   function isToolSegment(seg: MessageSegment): seg is ToolSegment {
     return seg.type === 'tool';
+  }
+
+  if (isLoadingDots) {
+    return (
+      <div className={cn("mb-4 flex justify-start")}>
+        <div className="max-w-3/4 order-2">
+          <div className="flex items-center mb-1">
+            <div className="h-6 w-6 mr-2 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-xs font-medium">AI</span>
+            </div>
+            <span className="text-xs text-muted-foreground">{new Date(timestamp).toLocaleTimeString()}</span>
+          </div>
+          <div className="p-3 rounded-lg bg-muted flex items-center">
+            <span className="text-base font-medium text-muted-foreground">AI is thinking</span>
+            <LoadingDots />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -250,7 +340,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted',
-                i > 0 ? 'mt-2' : ''
+                i > 0 ? 'mt-2' : '',
+                pending ? 'opacity-60' : ''
               )}
             >
               {seg.content}

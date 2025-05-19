@@ -36,6 +36,7 @@ const ProjectPage: React.FC = () => {
     progress?: number;
   }>({ status: 'idle' });
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isAwaitingAssistant, setIsAwaitingAssistant] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -102,6 +103,7 @@ const ProjectPage: React.FC = () => {
             }
             break;
           case 'ai_content':
+            setIsAwaitingAssistant(false);
             setAssistantStreamingMessage(prev => ({
               id: prev?.id || `streaming-${Date.now()}`,
               projectId: projectId!,
@@ -221,7 +223,7 @@ const ProjectPage: React.FC = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, assistantStreamingMessage]);
+  }, [messages, assistantStreamingMessage, pendingMessages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !projectId) return;
@@ -236,6 +238,11 @@ const ProjectPage: React.FC = () => {
     };
     setPendingMessages(prev => [...prev, userMessage]);
     setNewMessage('');
+    setIsAwaitingAssistant(true);
+
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
 
     try {
       await sendMessageAndConnectSse(projectId, userMessage.content);
@@ -313,6 +320,7 @@ const ProjectPage: React.FC = () => {
               role={msg.role}
               content={msg.content}
               timestamp={msg.createdAt}
+              pending={pendingMessages.some(pm => pm.id === msg.id)}
             />
           ))}
 
@@ -322,6 +330,15 @@ const ProjectPage: React.FC = () => {
               content={assistantStreamingMessage.content || ''}
               timestamp={assistantStreamingMessage.createdAt || new Date().toISOString()}
               isStreaming={true}
+            />
+          )}
+
+          {isAwaitingAssistant && !assistantStreamingMessage && (
+            <ChatMessage
+              role="assistant"
+              content=""
+              timestamp={new Date().toISOString()}
+              isLoadingDots={true}
             />
           )}
 
