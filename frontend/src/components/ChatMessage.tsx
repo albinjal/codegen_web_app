@@ -179,6 +179,7 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
     return <span className="ml-1">{'.'.repeat(dotCount)}</span>;
   };
 
+  const isOverwrite = type === 'str_replace' && (details?.oldStr === '' || details?.oldStr == null);
   return (
     <Card className="mb-3 overflow-hidden border-primary/10">
       <div
@@ -198,7 +199,9 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
           <span className="font-medium">
             {type === 'create_file'
               ? `Creating: ${path}`
-              : `Editing: ${path}`}
+              : isOverwrite
+                ? `Overwriting: ${path}`
+                : `Editing: ${path}`}
             {loading && <AnimatedDots />}
           </span>
         </div>
@@ -217,14 +220,14 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
       {isExpanded && (
         <div className="p-3 bg-muted/20 max-h-[300px] overflow-auto">
           {loading && <ShimmerBar />}
-          {type === 'create_file' ? (
+          {type === 'create_file' || isOverwrite ? (
             <SyntaxHighlighter
               language={guessLanguageFromPath(path)}
               style={prism}
               customStyle={{ borderRadius: 8, margin: '0', fontSize: 14 }}
               showLineNumbers={false}
             >
-              {stripCodeBlockMarkersFromCode(details?.content || code || '')}
+              {stripCodeBlockMarkersFromCode(isOverwrite ? details?.newStr || '' : details?.content || code || '')}
             </SyntaxHighlighter>
           ) : (
             <div className="text-xs font-mono space-y-2">
@@ -355,34 +358,6 @@ function renderWithCodeBlocks(text: string) {
       >
         {code}
       </SyntaxHighlighter>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    elements.push(<span key={idx++}>{text.slice(lastIndex)}</span>);
-  }
-  return elements;
-}
-
-// Utility to render text with plain code blocks (no syntax highlighting)
-function renderWithPlainCodeBlocks(text: string) {
-  // Regex to match ```lang\n...```
-  const codeBlockRegex = /```([a-zA-Z0-9]*)\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-  const elements: React.ReactNode[] = [];
-  let idx = 0;
-  while ((match = codeBlockRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(
-        <span key={idx++}>{text.slice(lastIndex, match.index)}</span>
-      );
-    }
-    const code = match[2];
-    elements.push(
-      <pre key={idx++} className="bg-muted rounded p-3 my-2 overflow-x-auto text-xs">
-        <code>{code}</code>
-      </pre>
     );
     lastIndex = match.index + match[0].length;
   }
