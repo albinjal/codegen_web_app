@@ -7,8 +7,8 @@ import { generateToolsXml } from '../build/toolConfig.js';
 // Define model configuration based on environment
 const MODEL_CONFIG = {
   model: env.CLAUDE_MODEL,
-  maxTokens: 4096,
-  temperature: 0.7,
+  maxTokens: 8000,
+  temperature: 0.5,
 };
 
 export interface AnthropicMessageEvent {
