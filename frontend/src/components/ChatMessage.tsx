@@ -181,7 +181,13 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
 
   return (
     <Card className="mb-3 overflow-hidden border-primary/10">
-      <div className="bg-muted/50 p-3 flex items-center justify-between">
+      <div
+        className="bg-muted/50 p-3 flex items-center justify-between cursor-pointer select-none"
+        onClick={() => !loading && setIsExpanded((open) => !open)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
         <div className="flex items-center gap-2">
           {loading && <Spinner size="sm" className="mr-1 text-primary" />}
           {type === 'create_file' ? (
@@ -199,9 +205,10 @@ const ToolOperation: React.FC<{ type: string; code?: string; path?: string; deta
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => !loading && setIsExpanded(!isExpanded)}
+          onClick={e => { e.stopPropagation(); if (!loading) setIsExpanded(open => !open); }}
           className="h-7 w-7 p-0"
           disabled={loading}
+          tabIndex={-1}
         >
           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
