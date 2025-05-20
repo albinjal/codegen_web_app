@@ -119,4 +119,39 @@ export class AnthropicClient extends EventEmitter {
       content: message.content,
     }));
   }
+
+  async getProjectNameAndIdeas(initialPrompt: string, maxTokens: number = 1000): Promise<ProjectInitalIdeasOutput> {
+    const systemPrompt = `
+Based on the following project description, generate a project name, a question, and 5 possible answers to that question.
+Respond strictly in JSON format.
+Example response:
+{
+  "name": "Project Name",
+  "question": "Ambiguous Question",
+  "answers": ["Answer 1", "Answer 2", "Answer 3", "Answer 4", "Answer 5"]
+}
+`;
+    const result = await this.client.messages.create({
+      model: MODEL_CONFIG.model,
+      max_tokens: maxTokens,
+      temperature: MODEL_CONFIG.temperature,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: initialPrompt }],
+      stream: false,
+    });
+
+    let textOut = '';
+    if (Array.isArray(result.content) && result.content.length > 0 && 'text' in result.content[0]) {
+      textOut = result.content.map((block: any) => block.text).join('');
+    } else if (typeof result.content === 'string') {
+      textOut = result.content;
+    }
+
+    try {
+      return JSON.parse(textOut);
+    } catch (error) {
+      console.error(`Error parsing project initial ideas from Anthropic:`, error, textOut);
+      return { name: null, question: null, answers: null };
+    }
+  }
 }
