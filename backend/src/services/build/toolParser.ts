@@ -91,5 +91,23 @@ export class ToolParser {
         rawContent: match[0]
       });
     }
+
+    // Also support <str_replace path="..."> ... </str_replace> as a full file overwrite
+    const overwriteRegex = /<str_replace\s+path=['"]([^'"]+)['"]>([\s\S]*?)<\/str_replace>/g;
+    while ((match = overwriteRegex.exec(text)) !== null) {
+      // Only match if this is NOT already matched by the above (i.e., no old_str/new_str attributes)
+      // To avoid double-matching, check that the match[0] does not contain 'old_str=' or 'new_str='
+      if (!/old_str=|new_str=/.test(match[0])) {
+        toolCalls.push({
+          tool: 'str_replace',
+          parameters: {
+            path: match[1],
+            old_str: '',
+            new_str: match[2]
+          },
+          rawContent: match[0]
+        });
+      }
+    }
   }
 }

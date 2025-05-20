@@ -106,7 +106,8 @@ export function formatDate(date: Date): string {
 - Refactoring components
 
 The tool will replace exactly one occurrence of old_str with new_str.
-If old_str is empty, the tool will completely overwrite the file with new_str.`,
+If old_str is empty, the tool will completely overwrite the file with new_str.
+Alternatively, you can use <str_replace path="..."> ... </str_replace> to fully overwrite a file (preferred for full file changes).`,
     parameters: [
       {
         name: 'path',
@@ -130,34 +131,15 @@ If old_str is empty, the tool will completely overwrite the file with new_str.`,
     examples: [
       {
         description: 'Adding a new prop to a component',
-        code: `<str_replace path="src/components/Card.tsx" old_str="interface CardProps {
-  title: string;
-  content: string;
-}" new_str="interface CardProps {
-  title: string;
-  content: string;
-  footer?: React.ReactNode;
-}">
-</str_replace>`
+        code: `<str_replace path="src/components/Card.tsx" old_str="interface CardProps {\n  title: string;\n  content: string;\n}" new_str="interface CardProps {\n  title: string;\n  content: string;\n  footer?: React.ReactNode;\n}">\n</str_replace>`
       },
       {
         description: 'Complete file overwrite (using empty old_str)',
-        code: `<str_replace path="src/pages/Home.tsx" old_str="" new_str="import React from 'react';
-import { Hero } from '../components/Hero';
-import { FeatureList } from '../components/FeatureList';
-
-export const HomePage: React.FC = () => {
-  return (
-    <div className="home-page">
-      <Hero
-        title="Welcome to Our App"
-        subtitle="The best solution for your needs"
-      />
-      <FeatureList />
-    </div>
-  );
-};">
-</str_replace>`
+        code: `<str_replace path="src/pages/Home.tsx" old_str="" new_str="import React from 'react';\nimport { Hero } from '../components/Hero';\nimport { FeatureList } from '../components/FeatureList';\n\nexport const HomePage: React.FC = () => {\n  return (\n    <div className=\"home-page\">\n      <Hero\n        title=\"Welcome to Our App\"\n        subtitle=\"The best solution for your needs\"\n      />\n      <FeatureList />\n    </div>\n  );\n};">\n</str_replace>`
+      },
+      {
+        description: 'Complete file overwrite (preferred, using only path and content)',
+        code: `<str_replace path="src/pages/Home.tsx">\nimport React from 'react';\nimport { Hero } from '../components/Hero';\nimport { FeatureList } from '../components/FeatureList';\n\nexport const HomePage: React.FC = () => {\n  return (\n    <div className=\"home-page\">\n      <Hero\n        title=\"Welcome to Our App\"\n        subtitle=\"The best solution for your needs\"\n      />\n      <FeatureList />\n    </div>\n  );\n};\n</str_replace>`
       }
     ]
   }

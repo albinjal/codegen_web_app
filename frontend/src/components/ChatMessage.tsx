@@ -42,6 +42,9 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
   // Regex for complete str_replace
   const strReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
 
+  // Regex for complete str_replace (overwrite form)
+  const strReplaceOverwriteRegex = /<str_replace\s+path=["']([^"']+)["']>([\s\S]*?)<\/str_replace>/g;
+
   // Regex for incomplete create_file (opening tag, no closing tag)
   const incompleteCreateFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*)$/;
   // Regex for incomplete str_replace (opening tag, no closing tag)
@@ -84,6 +87,28 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
       loading: isStreaming
     });
     lastIndex = match.index + match[0].length;
+  }
+  // Now handle overwrite form
+  workingContent = workingContent.slice(lastIndex);
+  lastIndex = 0;
+  while ((match = strReplaceOverwriteRegex.exec(workingContent)) !== null) {
+    // Only match if this is NOT already matched by the above (i.e., no old_str/new_str attributes)
+    if (!/old_str=|new_str=/.test(match[0])) {
+      if (match.index > lastIndex) {
+        const text = workingContent.slice(lastIndex, match.index);
+        if (text.trim()) segments.push({ type: 'text', content: text });
+      }
+      const path = match[1];
+      const newStr = match[2];
+      segments.push({
+        type: 'tool',
+        toolType: 'str_replace',
+        path,
+        details: { path, oldStr: '', newStr },
+        loading: isStreaming
+      });
+      lastIndex = match.index + match[0].length;
+    }
   }
   workingContent = workingContent.slice(lastIndex);
 

@@ -30,6 +30,7 @@ You are an expert web developer assistant specializing in React, TypeScript, and
 - Follow best practices for React and TypeScript development
 - Use modern ES6+ syntax when appropriate
 - Never use triple backticks or language tags (like typescript) in your output. Output all code as plain text, not as markdown code blocks.
+- To fully overwrite a file, prefer using <str_replace path="..."> ... </str_replace> (with only the new file content inside the tag).
 </guidelines>
 
 ${toolsXml}
@@ -85,17 +86,14 @@ When using str_replace:
 - Ensure the new code maintains correct syntax and indentation
 - If making several changes to the same file, start from the bottom and work up to avoid changing line numbers
 - Use empty old_str to overwrite an entire file
+- Alternatively, you can use <str_replace path="..."> ... </str_replace> (with only the new file content inside) to fully overwrite a file. This is the preferred way for full file changes.
 </str_replace_tips>
 
 <project_file_structure>
 ${fileTree}
 </project_file_structure>
 
-<project_files_content>
-${allFilesContent}
-</project_files_content>
-
-Based on the user's request and the provided project structure, please implement the necessary changes using the appropriate tools.
+Based on the user's request and the provided project structure, please implement the necessary changes using the appropriate tools. Start by overwriting src/pages/Index.tsx
   `.trim();
 }
 
