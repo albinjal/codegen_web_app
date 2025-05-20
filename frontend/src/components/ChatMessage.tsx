@@ -34,125 +34,127 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
     | { type: 'tool'; toolType: string; path?: string; details?: any; loading: boolean }
   > = [];
 
-  let lastToolEnd = 0;
   let workingContent = content;
 
   // Regex for complete create_file
   const createFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*?)<\/create_file>/g;
   // Regex for complete str_replace
   const strReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>\s*<\/str_replace>/g;
-
   // Regex for complete str_replace (overwrite form)
   const strReplaceOverwriteRegex = /<str_replace\s+path=["']([^"']+)["']>([\s\S]*?)<\/str_replace>/g;
 
   // Regex for incomplete create_file (opening tag, no closing tag)
   const incompleteCreateFileRegex = /<create_file\s+path=["']([^"']+)["']>([\s\S]*)$/;
-  // Regex for incomplete str_replace (opening tag, no closing tag)
-  const incompleteStrReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)['"]>([\s\S]*)$/;
+  // Regex for incomplete str_replace (old_str/new_str form, opening tag, no closing tag)
+  const incompleteStrReplaceRegex = /<str_replace\s+path=["']([^"']+)["']\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["']>([\s\S]*)$/;
+  // Regex for incomplete str_replace (overwrite form, opening tag, no closing tag)
+  const incompleteStrReplaceOverwriteRegex = /<str_replace\s+path=["']([^"']+)["']>([\s\S]*)$/;
 
-  // First, process all complete tool calls
+  // Helper to find the first tool tag (complete or incomplete)
+  const firstToolTagRegex = /<create_file\s+path=["']([^"']+)["']>|<str_replace\s+path=["']([^"']+)["'](?:\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["'])?>/g;
+
   let match;
   let lastIndex = 0;
-  while ((match = createFileRegex.exec(workingContent)) !== null) {
-    if (match.index > lastIndex) {
-      const text = workingContent.slice(lastIndex, match.index);
+  while (true) {
+    // Find the next tool tag (complete or incomplete)
+    const next = firstToolTagRegex.exec(workingContent);
+    if (!next) break;
+    if (next.index > lastIndex) {
+      const text = workingContent.slice(lastIndex, next.index);
       if (text.trim()) segments.push({ type: 'text', content: text });
     }
-    const path = match[1];
-    const fileContent = match[2];
-    segments.push({
-      type: 'tool',
-      toolType: 'create_file',
-      path,
-      details: { path, content: fileContent.trim() },
-      loading: isStreaming
-    });
-    lastIndex = match.index + match[0].length;
-  }
-  workingContent = workingContent.slice(lastIndex);
-  lastIndex = 0;
-  while ((match = strReplaceRegex.exec(workingContent)) !== null) {
-    if (match.index > lastIndex) {
-      const text = workingContent.slice(lastIndex, match.index);
-      if (text.trim()) segments.push({ type: 'text', content: text });
-    }
-    const path = match[1];
-    const oldStr = match[2];
-    const newStr = match[3];
-    segments.push({
-      type: 'tool',
-      toolType: 'str_replace',
-      path,
-      details: { path, oldStr, newStr },
-      loading: isStreaming
-    });
-    lastIndex = match.index + match[0].length;
-  }
-  // Now handle overwrite form
-  workingContent = workingContent.slice(lastIndex);
-  lastIndex = 0;
-  while ((match = strReplaceOverwriteRegex.exec(workingContent)) !== null) {
-    // Only match if this is NOT already matched by the above (i.e., no old_str/new_str attributes)
-    if (!/old_str=|new_str=/.test(match[0])) {
-      if (match.index > lastIndex) {
-        const text = workingContent.slice(lastIndex, match.index);
-        if (text.trim()) segments.push({ type: 'text', content: text });
+    // Determine which tool and parse accordingly
+    if (next[0].startsWith('<create_file')) {
+      // Try to match complete create_file
+      createFileRegex.lastIndex = next.index;
+      const complete = createFileRegex.exec(workingContent);
+      if (complete && complete.index === next.index) {
+        segments.push({
+          type: 'tool',
+          toolType: 'create_file',
+          path: complete[1],
+          details: { path: complete[1], content: complete[2].trim() },
+          loading: isStreaming
+        });
+        lastIndex = complete.index + complete[0].length;
+        firstToolTagRegex.lastIndex = lastIndex;
+        continue;
       }
-      const path = match[1];
-      const newStr = match[2];
-      segments.push({
-        type: 'tool',
-        toolType: 'str_replace',
-        path,
-        details: { path, oldStr: '', newStr },
-        loading: isStreaming
-      });
-      lastIndex = match.index + match[0].length;
+      // Otherwise, treat as incomplete
+      const incomplete = incompleteCreateFileRegex.exec(workingContent.slice(next.index));
+      if (incomplete) {
+        segments.push({
+          type: 'tool',
+          toolType: 'create_file',
+          path: incomplete[1],
+          details: { path: incomplete[1], content: incomplete[2] },
+          loading: true
+        });
+        // No more content after incomplete
+        return segments;
+      }
+    } else if (next[0].startsWith('<str_replace')) {
+      // Try to match complete str_replace (old_str/new_str form)
+      strReplaceRegex.lastIndex = next.index;
+      const complete = strReplaceRegex.exec(workingContent);
+      if (complete && complete.index === next.index) {
+        segments.push({
+          type: 'tool',
+          toolType: 'str_replace',
+          path: complete[1],
+          details: { path: complete[1], oldStr: complete[2], newStr: complete[3] },
+          loading: isStreaming
+        });
+        lastIndex = complete.index + complete[0].length;
+        firstToolTagRegex.lastIndex = lastIndex;
+        continue;
+      }
+      // Try to match complete str_replace (overwrite form)
+      strReplaceOverwriteRegex.lastIndex = next.index;
+      const completeOverwrite = strReplaceOverwriteRegex.exec(workingContent);
+      if (completeOverwrite && completeOverwrite.index === next.index && !/old_str=|new_str=/.test(completeOverwrite[0])) {
+        segments.push({
+          type: 'tool',
+          toolType: 'str_replace',
+          path: completeOverwrite[1],
+          details: { path: completeOverwrite[1], oldStr: '', newStr: completeOverwrite[2] },
+          loading: isStreaming
+        });
+        lastIndex = completeOverwrite.index + completeOverwrite[0].length;
+        firstToolTagRegex.lastIndex = lastIndex;
+        continue;
+      }
+      // Otherwise, treat as incomplete (old_str/new_str form)
+      const incomplete = incompleteStrReplaceRegex.exec(workingContent.slice(next.index));
+      if (incomplete) {
+        segments.push({
+          type: 'tool',
+          toolType: 'str_replace',
+          path: incomplete[1],
+          details: { path: incomplete[1], oldStr: incomplete[2], newStr: incomplete[3] },
+          loading: true
+        });
+        return segments;
+      }
+      // Otherwise, treat as incomplete (overwrite form)
+      const incompleteOverwrite = incompleteStrReplaceOverwriteRegex.exec(workingContent.slice(next.index));
+      if (incompleteOverwrite && !/old_str=|new_str=/.test(incompleteOverwrite[0])) {
+        segments.push({
+          type: 'tool',
+          toolType: 'str_replace',
+          path: incompleteOverwrite[1],
+          details: { path: incompleteOverwrite[1], oldStr: '', newStr: incompleteOverwrite[2] },
+          loading: true
+        });
+        return segments;
+      }
     }
-  }
-  workingContent = workingContent.slice(lastIndex);
-
-  // Now, check for incomplete tool calls at the end of the message
-  let incompleteMatch;
-  if ((incompleteMatch = incompleteCreateFileRegex.exec(workingContent))) {
-    const path = incompleteMatch[1];
-    const partialContent = incompleteMatch[2];
-    // Text before the tag
-    const tagStart = workingContent.indexOf('<create_file');
-    if (tagStart > 0) {
-      const text = workingContent.slice(0, tagStart);
-      if (text.trim()) segments.push({ type: 'text', content: text });
-    }
-    segments.push({
-      type: 'tool',
-      toolType: 'create_file',
-      path,
-      details: { path, content: partialContent },
-      loading: true
-    });
-    return segments;
-  }
-  if ((incompleteMatch = incompleteStrReplaceRegex.exec(workingContent))) {
-    const path = incompleteMatch[1];
-    const oldStr = incompleteMatch[2];
-    const newStr = incompleteMatch[3];
-    // Text before the tag
-    const tagStart = workingContent.indexOf('<str_replace');
-    if (tagStart > 0) {
-      const text = workingContent.slice(0, tagStart);
-      if (text.trim()) segments.push({ type: 'text', content: text });
-    }
-    segments.push({
-      type: 'tool',
-      toolType: 'str_replace',
-      path,
-      details: { path, oldStr, newStr },
-      loading: true
-    });
-    return segments;
+    // If we get here, just move past this tag
+    lastIndex = next.index + next[0].length;
+    firstToolTagRegex.lastIndex = lastIndex;
   }
   // Any remaining text
-  if (workingContent.trim()) segments.push({ type: 'text', content: workingContent });
+  if (workingContent.slice(lastIndex).trim()) segments.push({ type: 'text', content: workingContent.slice(lastIndex) });
   return segments;
 };
 

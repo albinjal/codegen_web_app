@@ -87,6 +87,7 @@ When using str_replace:
 - If making several changes to the same file, start from the bottom and work up to avoid changing line numbers
 - Use empty old_str to overwrite an entire file
 - Alternatively, you can use <str_replace path="..."> ... </str_replace> (with only the new file content inside) to fully overwrite a file. This is the preferred way for full file changes.
+- If only a smaller section of the file needs to be changed, use str_replace with old_str to specify the exact section to replace.
 </str_replace_tips>
 
 <project_file_structure>
