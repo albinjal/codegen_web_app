@@ -143,3 +143,37 @@ export async function getAllProjectFilesContent(
   }
   return output;
 }
+
+/**
+ * Returns the content of all files in the 'src' directory of a project, formatted as an XML-like string.
+ * Ignores files and folders based on the provided ignore list (defaults to template .gitignore).
+ * @param projectId The project folder name in workspace
+ * @param ignore Optional array of folder/file names to ignore
+ * @returns A string containing all file contents formatted with <file> tags, only for files under 'src/'
+ */
+export async function getAllSrcFilesContent(
+  projectId: string,
+  ignore: string[] = DEFAULT_IGNORE
+): Promise<string> {
+  const projectWorkspaceAbsPath = getAbsoluteProjectWorkspacePath(projectId);
+  const srcDir = join(projectWorkspaceAbsPath, 'src');
+  let allFiles: string[] = [];
+  try {
+    allFiles = await collectFilePaths(srcDir, projectWorkspaceAbsPath, ignore);
+  } catch (error) {
+    // If src/ doesn't exist, return empty string
+    return '';
+  }
+  let output = '';
+  for (const filePath of allFiles) {
+    try {
+      const content = await readFileInProject(projectId, filePath); // readFileInProject takes relative path
+      output += `<file path="${filePath}">\n${content}\n</file>\n`;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`Skipping file ${filePath} due to read error: ${errorMessage}`);
+      output += `<file path="${filePath}" error="Could not read file: ${errorMessage}"></file>\n`;
+    }
+  }
+  return output;
+}
