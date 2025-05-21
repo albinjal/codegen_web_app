@@ -17,8 +17,8 @@
 * **Single responsibility** — one concern per module/function.
 * **Fail fast & loudly** — surface invalid input/state early.
 * **Automate the boring** — formatter, linter, tests in pre‑commit.
-* **Document intent, not implementation** — code shows *how*; docs explain *why*.
-* **Consistency is king** — when changing behaviour, update code, tests & docs together.
+* **Document intent, not implementation** — code shows *how*; comments explain *why*.
+* **Consistency is king** — Important: when changing behaviour, update code, tests & docs together.
 
 ---
 
@@ -32,7 +32,7 @@
   workspace/ – runtime project directories (git‑ignored)
   prisma/    – schema.prisma & migrations
   template/  – seed user‑generated site
-  project_description/ – architecture & implementation docs
+  project_description/ – architecture & implementation plan
   .env – environment variables
   ```
 * **Preview serving:** static `dist/` under `/preview/<project_id>/`.
@@ -59,6 +59,7 @@
 * Write tests next to code (`__tests__` or `*.test.ts`).
 * Target meaningful coverage rather than a % number.
 * Code reviews focus on correctness, clarity, future maintainability.
+* Use vitest for testing. Focus on integration tests, not unit tests. Avoid too much mocking.
 
 ---
 
@@ -132,3 +133,4 @@
 ## Other rules
 - Refer to the files in project_description/ and update as we go along but DON'T update design_decisions.md or functional_description.md.
 - Make sure to not get confused about this being a code gen applicaiton. The projects created by the users / template should not be consused with this web app that we are building to generate websites.
+- Don't ask for confirmation to make changes, always just go ahead and make the changes.

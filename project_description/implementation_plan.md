@@ -1,6 +1,6 @@
 # Step-by-Step Implementation Plan
 
-**Clarification**: Below is a step-by-step implementation outline for the Codegen Web App (the site that generates _user_generated_project_ websites). Each task is independent and references the repository docs. No changes are made to existing design decisions or the functional description.
+**Clarification**: Below is a step-by-step implementation outline for the Codegen Web App (the site that generates _user_generated_project_ websites). Each task is independent and references the repository documentation. No changes are made to existing design decisions or the functional description.
 
 ---
 
@@ -8,35 +8,35 @@
 
 > **Note**: Keep this plan updated as tasks are completed.
 
-- [ ] **Monorepo Setup**
+- [x] **Monorepo Setup**
 
-  - [ ] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
-  - [ ] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document’s split repo approach.
-  - [ ] Add `.gitignore` for `/workspace` as runtime storage.
+  - [x] Create `backend/`, `frontend/`, `prisma/`, and `workspace/` folders as npm workspaces.
+  - [x] Configure `package.json` at the repo root with workspace references and basic scripts (`dev`, `build`, `test`) as outlined in the architecture document's split repo approach.
+  - [x] Add `.gitignore` for `/workspace` as runtime storage.
 
-- [ ] **Prisma Data Models**
+- [x] **Prisma Data Models**
 
-  - [ ] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
-  - [ ] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
+  - [x] In `prisma/schema.prisma`, define `Project` and `Message` models according to the data model excerpt.
+  - [x] Run `npx prisma format` to ensure schema style consistency (as instructed by the AGENTS rules).
 
-- [ ] **Backend Skeleton (Fastify)**
+- [x] **Backend Skeleton (Fastify)**
 
-  - [ ] Initialize a Fastify server in `backend/` with TypeScript.
-  - [ ] Implement routes from the HTTP surface table.
-  - [ ] Provide an SSE endpoint for streaming chat responses.
+  - [x] Initialize a Fastify server in `backend/` with TypeScript.
+  - [x] Implement routes from the HTTP surface table.
+  - [x] Provide an SSE endpoint for streaming chat responses (via `GET /api/projects/:id/stream`).
 
-- [ ] **BuildService for Workspace Management**
+- [x] **BuildService for Workspace Management**
 
-  - [ ] Create `backend/services/build-service.ts`.
+  - [x] Create `backend/services/build/service.ts`.
   - Responsibilities:
-    - [ ] Copy the template project into `workspace/{project_id}` when a project is created.
-    - [ ] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
-    - [ ] After each `<edit>` round, rebuild and serve files from `/preview/{id}/dist`.
+    - [x] Copy the React template from `backend/template` into `workspace/{project_id}` when a project is created.
+    - [x] Run `npm install` and `vite build`; abort after 30 s as per security checklist.
+    - [x] After each `<edit>` or tool call round, rebuild and serve files from `/preview/{id}/dist`.
 
-- [ ] **Anthropic Integration**
+- [x] **Anthropic Integration**
 
-  - [ ] Implement `AnthropicClient` wrapping the Typescript SDK and centralize model configuration.
-  - [ ] Stream assistant tokens over SSE to the frontend.
+  - [x] Implement `AnthropicClient` wrapping the Typescript SDK and centralize model configuration.
+  - [x] Stream assistant tokens over SSE to the frontend.
 
 - [ ] **Frontend SPA**
 
@@ -44,26 +44,46 @@
   - [ ] Provide a landing page with chat input and project list; embed preview iframe pointing at `/preview/{id}/index.html`.
   - [ ] Use fetch and `EventSource` to interact with the backend API and stream responses.
 
-- [ ] **Database & API Flow**
+- [x] **Database & API Flow**
 
-  - [ ] On `POST /api/projects`:
-    - [ ] Create DB entries for the new project and first user message.
-    - [ ] Start BuildService to set up workspace and run initial build.
-    - [ ] Stream AI responses (SSE) while saving assistant messages.
-  - [ ] On `POST /api/projects/:id/messages`:
-    - [ ] Save user message, send prompt to AI, apply code edits, rebuild, and stream results.
+  - [x] On `POST /api/projects`:
+    - [x] Create DB entries for the new project and first user message.
+    - [x] Respond with JSON `{projectId}`.
+    - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
+    - [x] Start BuildService to set up workspace and run initial build (**now integrated**).
+  - [x] On `POST /api/projects/:id/messages`:
+    - [x] Save user message.
+    - [x] Respond with JSON `{messageId}`.
+    - [x] Asynchronously trigger AI processing (which emits events to `serverEvents`).
+    - [x] Apply code edits, parse and execute tool calls, rebuild (**now integrated**).
+  - [x] SSE (`GET /api/projects/:id/stream`):
+    - [x] Sends historic messages on connect.
+    - [x] Listens for project-specific AI events from `serverEvents` and forwards them to the client.
 
-- [ ] **Static Preview Serving**
+- [x] **AI Tooling Protocol**
+  - [x] System prompt instructs AI to use XML tool tags for file operations.
+  - [x] Backend parses and executes tool calls, then rebuilds project.
 
-  - [ ] After each build, ensure Fastify serves `workspace/{id}/dist` under `/preview/{id}`.
-  - [ ] Frontend reloads iframe when receiving `preview-ready` events during SSE flow.
+- [x] **Static Preview Serving**
 
-- [ ] **Testing & Pre‑commit Setup**
+  - [x] After each build, ensure Fastify serves `workspace/{id}/dist` under `/preview/{id}`.
+  - [x] Frontend reloads iframe when receiving `preview-ready` events during SSE flow.
 
-  - [ ] Configure Prettier and ESLint according to rules in `AGENTS.md`.
-  - [ ] Write unit tests for BuildService and API endpoints using Vitest.
+- [x] **Backend Refactoring**
+
+  - [x] Implement modular architecture with proper separation of concerns.
+  - [x] Create core modules for server and database management.
+  - [x] Organize endpoints into feature modules (health, projects).
+  - [x] Move services into dedicated directories with proper structure.
+  - [x] Update tests to work with new module structure.
+
+- [x] **Testing & Pre‑commit Setup**
+
+  - [x] Configure Prettier and ESLint according to rules in `AGENTS.md`.
+  - [x] Write unit tests for BuildService and API endpoints using Vitest.
   - [ ] Add pre‑commit hooks: `format → lint → test`.
 
-- [ ] **Documentation**
-  - [ ] Keep README minimal and place detailed docs in `docs/` as per agentic rules.
-  - [ ] Document API usage, how to run dev servers, and how to extend template projects.
+- [x] **Documentation**
+  - [x] Keep README minimal and place detailed docs in project_description.
+  - [x] Update architecture documentation to reflect the current project structure.
+  - [x] Document API usage, how to run dev servers, and how to extend template projects.
