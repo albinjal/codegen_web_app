@@ -18,6 +18,12 @@ export interface AnthropicMessageEvent {
   error?: string;
 }
 
+export interface ProjectInitalIdeasOutput {
+  name: string | null;
+  question: string | null;
+  answers: string[] | null;
+}
+
 export class AnthropicClient extends EventEmitter {
   private client: Anthropic;
 

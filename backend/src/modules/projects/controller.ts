@@ -14,7 +14,6 @@ import { getRequiredParameters } from '../../services/build/toolConfig.js';
 
 // Get instances of required services
 const prismaClient = getPrismaClient();
-const globalAnthropicClient = new AnthropicClient();
 
 /**
  * Creates a new project with the initial prompt
