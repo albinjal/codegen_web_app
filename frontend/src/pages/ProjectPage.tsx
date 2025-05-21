@@ -320,7 +320,6 @@ const ProjectPage: React.FC = () => {
               role={msg.role}
               content={msg.content}
               timestamp={msg.createdAt}
-              pending={pendingMessages.some(pm => pm.id === msg.id)}
             />
           ))}
 

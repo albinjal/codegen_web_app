@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, FileCode, CodeIcon, User } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, FileCode, CodeIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -53,7 +53,6 @@ const splitMessageSegments = (content: string, isStreaming: boolean) => {
   // Helper to find the first tool tag (complete or incomplete)
   const firstToolTagRegex = /<create_file\s+path=["']([^"']+)["']>|<str_replace\s+path=["']([^"']+)["'](?:\s+old_str=["']([\s\S]*?)["']\s+new_str=["']([\s\S]*?)["'])?>/g;
 
-  let match;
   let lastIndex = 0;
   while (true) {
     // Find the next tool tag (complete or incomplete)
@@ -359,43 +358,9 @@ function stripAllCodeBlockMarkers(text: string): string {
   return text.replace(/```[a-zA-Z0-9]*\n([\s\S]*?)```/g, '$1').replace(/```([\s\S]*?)```/g, '$1');
 }
 
-// Utility to render text with syntax-highlighted code blocks
-function renderWithCodeBlocks(text: string) {
-  // Regex to match ```lang\n...```
-  const codeBlockRegex = /```([a-zA-Z0-9]*)\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-  const elements: React.ReactNode[] = [];
-  let idx = 0;
-  while ((match = codeBlockRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(
-        <span key={idx++}>{text.slice(lastIndex, match.index)}</span>
-      );
-    }
-    const lang = match[1] || 'text';
-    const code = match[2];
-    elements.push(
-      <SyntaxHighlighter
-        key={idx++}
-        language={lang}
-        style={prism}
-        customStyle={{ borderRadius: 8, margin: '12px 0', fontSize: 14 }}
-        showLineNumbers={false}
-      >
-        {code}
-      </SyntaxHighlighter>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    elements.push(<span key={idx++}>{text.slice(lastIndex)}</span>);
-  }
-  return elements;
-}
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
-  role, content, timestamp, isStreaming, pending, isLoadingDots
+  role, content, timestamp, isStreaming, isLoadingDots
 }) => {
   // For assistant, split into segments
   const segments: MessageSegment[] =
