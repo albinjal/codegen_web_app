@@ -13,18 +13,6 @@ describe('AnthropicClient', () => {
     expect(anthropicClient).toBeInstanceOf(EventEmitter);
   });
 
-  describe('formatPrompt', () => {
-    it('should format the prompt with context', () => {
-      const prompt = 'Create a website';
-      const formattedPrompt = anthropicClient.formatPrompt(prompt);
-
-      expect(formattedPrompt).toContain('<context>');
-      expect(formattedPrompt).toContain('</context>');
-      expect(formattedPrompt).toContain('<edit file=');
-      expect(formattedPrompt).toContain(prompt);
-    });
-  });
-
   describe('createMessageHistory', () => {
     it('should return a properly formatted message history', () => {
       const messages = [

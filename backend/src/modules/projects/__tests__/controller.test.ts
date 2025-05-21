@@ -51,7 +51,7 @@ describe('Projects Controller', () => {
       (prisma.project.create as any).mockResolvedValue({ id: projectId });
       (prisma.message.create as any).mockResolvedValue({ id: 'message-id' });
 
-      const result = await createProject({ initialPrompt });
+      const result = await createProject({ initialPrompt }, new BuildService());
 
       expect(prisma.project.create).toHaveBeenCalled();
       expect(prisma.message.create).toHaveBeenCalledWith({
