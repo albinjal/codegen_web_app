@@ -5,8 +5,7 @@
   "private": true,
   "workspaces": [
     "backend",
-    "frontend",
-    "prisma"
+    "frontend"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
@@ -15,17 +14,18 @@
     "build": "npm run build --workspaces",
     "start": "npm run start --workspace=backend",
     "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "prisma:generate": "npm run prisma:generate --workspace=backend",
+    "prisma:migrate:dev": "npm run prisma:migrate:dev --workspace=backend",
+    "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=backend",
+    "prisma:db:push": "npm run prisma:db:push --workspace=backend",
+    "prisma:studio": "npm run prisma:studio --workspace=backend"
   },
   "engines": {
     "node": ">=22.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "concurrently": "^8.2.2",
-    "prettier": "^3.1.0",
-    "prisma": "^1.0.0",
-    "typescript": "^5.3.3"
+    "concurrently": "^8.2.2"
   },
   "keywords": [
     "codegen",
@@ -33,9 +33,5 @@
     "website-generator"
   ],
   "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@prisma/client": "^6.8.2",
-    "fs-extra": "^11.3.0"
-  }
+  "license": "MIT"
 }
