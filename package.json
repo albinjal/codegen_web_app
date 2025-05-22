@@ -16,10 +16,11 @@
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "prisma:generate": "npm run prisma:generate --workspace=backend",
-    "prisma:migrate:dev": "npm run prisma:migrate:dev --workspace=backend",
+    "prisma:migrate:dev": "npm run prisma:migrate:dev --workspace=backend --name init",
     "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=backend",
     "prisma:db:push": "npm run prisma:db:push --workspace=backend",
-    "prisma:studio": "npm run prisma:studio --workspace=backend"
+    "prisma:studio": "npm run prisma:studio --workspace=backend",
+    "setup:dev": "npm run prisma:generate && npm run prisma:db:push"
   },
   "engines": {
     "node": ">=22.0.0"
