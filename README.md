@@ -2,47 +2,77 @@
 
 A web application that allows users to generate websites using AI.
 
-> **Status**: Core functionality implemented. The application includes a working backend API, frontend interface, AI integration, and project build system. Ready for development and testing.
-
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
 
+**For both Docker and npm routes:**
+- Git (for cloning the repository)
+
+**For npm route only:**
 - Node.js (version >=22.0.0)
 - npm (comes with Node.js)
 
-### Installation & Setup
+**For Docker route only:**
+- Docker and Docker Compose
+
+### Initial Setup (Required for Both Routes)
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/albinjal/codegen_web_app
     cd codegen-web-app
     ```
 
-2.  **Install dependencies:**
+2.  **Set up environment variables:**
+    Copy the example environment file and configure your secrets:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Edit the `.env` file and set the following variables:
+    - `PORT=3000` (default port for the backend)
+    - `ANTHROPIC_API_KEY` (your Anthropic API key for AI functionality)
+    - `CLAUDE_MODEL=claude-3-5-sonnet-latest` (Claude model to use)
+
+### Option A: Installation & Setup with npm
+
+3.  **Install dependencies:**
     This project uses npm workspaces. Install dependencies from the root directory:
 
     ```bash
     npm install
     ```
 
-3.  **Set up the development environment:**
+4.  **Set up the development environment:**
     This command will generate the Prisma client and run database migrations:
 
     ```bash
     npm run setup:dev
     ```
 
-4.  **Run the development servers:**
+5.  **Run the development servers:**
     This will start both the backend and frontend development servers concurrently:
     ```bash
     npm run dev
     ```
     - Frontend will be available at `http://localhost:5173`
     - Backend API will be available at `http://localhost:3000` (proxied from the frontend)
+
+### Option B: Installation & Setup with Docker
+
+3.  **Start with Docker Compose:**
+    This command installs dependencies, runs database setup, and launches both the backend and frontend:
+
+    ```bash
+    docker-compose up
+    ```
+
+    The app will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
 
 ## Available Scripts
 
@@ -64,19 +94,16 @@ From the root directory:
 
 Refer to `backend/package.json` and `frontend/package.json` for workspace-specific scripts.
 
-## Docker Development
+## Additional Docker Commands
 
-If you prefer running the project with Docker, a compose file is included. Start everything with:
+For Docker development, you can use these additional commands:
 
-```bash
-docker-compose up
-```
+- `docker-compose up -d`: Run in detached mode (background)
+- `docker-compose down`: Stop and remove containers
+- `docker-compose logs`: View logs from all services
+- `docker-compose logs [service-name]`: View logs from a specific service
 
-This command installs dependencies, runs database setup, and launches both the backend and frontend.
-
-The app will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
-
-Copy `.env.example` to `.env` and set your secrets. Docker Compose loads this file automatically, but you can also export variables before running `docker-compose up`.
+Docker Compose automatically loads the `.env` file, but you can also export variables before running `docker-compose up`.
 
 ## Running in Production Mode (Locally)
 
@@ -132,18 +159,7 @@ This is a monorepo with the following workspaces:
     - `pages`: Page components (LandingPage, ProjectPage)
 - `prisma`: Database models and migrations
 
-## Environment Variables
 
-Create a `.env` file in the root directory (you can copy `.env.example`) with the following variables:
-
-```
-# Required: Anthropic API key
-ANTHROPIC_API_KEY=your_api_key_here
-
-# Optional: Claude model selection (defaults to claude-3-5-sonnet-20240620 if not specified)
-# Options: claude-3-opus-20240229, claude-3-5-sonnet-20240620, claude-3-haiku-20240307, etc.
-CLAUDE_MODEL=claude-3-5-sonnet-20240620
-```
 
 ## Architecture
 
