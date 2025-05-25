@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  app:
+    image: node:22-slim
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    command: sh -c "npm install && npm run setup:dev && npm run dev"
+    ports:
+      - "5173:5173"
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
