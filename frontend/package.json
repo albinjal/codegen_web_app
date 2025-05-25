@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "description": "Frontend for the Codegen Web App",
+  "description": "Frontend for Russable - This guy fucks at web development!",
   "type": "module",
   "scripts": {
     "dev": "vite",

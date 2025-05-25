@@ -1,7 +1,7 @@
 {
-  "name": "codegen-web-app",
+  "name": "russable",
   "version": "1.0.0",
-  "description": "Web application that allows users to generate websites using AI",
+  "description": "Russable - The billionaire's choice for AI-powered web development. This guy fucks... at coding!",
   "private": true,
   "workspaces": [
     "backend",
@@ -29,10 +29,14 @@
     "concurrently": "^8.2.2"
   },
   "keywords": [
-    "codegen",
+    "russable",
+    "russ-hanneman",
     "ai",
-    "website-generator"
+    "website-generator",
+    "three-comma-club",
+    "silicon-valley",
+    "billionaire-tech"
   ],
-  "author": "",
+  "author": "Russ Hanneman (Three Comma Club Member)",
   "license": "MIT"
 }
