@@ -14,9 +14,5 @@ export const router: FastifyPluginAsync = async (fastify) => {
     // Project routes
     api.register(projectRoutes, { prefix: '/projects' });
 
-    // TODO: Register other route modules as they are implemented
-    // Example:
-    // api.register(projectRoutes, { prefix: '/projects' });
-    // api.register(messageRoutes, { prefix: '/messages' });
   }, { prefix: '/api' });
 };
