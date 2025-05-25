@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   app:
-    image: node:22-slim
+    image: node:22
     working_dir: /usr/src/app
     volumes:
       - .:/usr/src/app
@@ -14,3 +14,4 @@ services:
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
+      VITE_HOST: "0.0.0.0"
