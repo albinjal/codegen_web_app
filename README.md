@@ -10,12 +10,13 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-*   Node.js (version >=22.0.0)
-*   npm (comes with Node.js)
+- Node.js (version >=22.0.0)
+- npm (comes with Node.js)
 
 ### Installation & Setup
 
 1.  **Clone the repository:**
+
     ```bash
     git clone <repository-url>
     cd codegen-web-app
@@ -23,12 +24,14 @@ These instructions will get you a copy of the project up and running on your loc
 
 2.  **Install dependencies:**
     This project uses npm workspaces. Install dependencies from the root directory:
+
     ```bash
     npm install
     ```
 
 3.  **Set up the development environment:**
     This command will generate the Prisma client and run database migrations:
+
     ```bash
     npm run setup:dev
     ```
@@ -38,52 +41,69 @@ These instructions will get you a copy of the project up and running on your loc
     ```bash
     npm run dev
     ```
-    *   Frontend will be available at `http://localhost:5173`
-    *   Backend API will be available at `http://localhost:3000` (proxied from the frontend)
+    - Frontend will be available at `http://localhost:5173`
+    - Backend API will be available at `http://localhost:3000` (proxied from the frontend)
 
 ## Available Scripts
 
 From the root directory:
 
-*   `npm run dev`: Starts both backend and frontend development servers.
-*   `npm run dev:backend`: Starts the backend development server.
-*   `npm run dev:frontend`: Starts the frontend development server.
-*   `npm run build`: Builds both backend and frontend for production.
-*   `npm run start`: Starts the backend server (expects a production build).
-*   `npm run test`: Runs tests for both backend and frontend.
-*   `npm run lint`: Lints both backend and frontend.
-*   `npm run setup:dev`: Generates Prisma client and runs development database migrations.
-*   `npm run prisma:generate`: Generates Prisma client (delegates to backend workspace).
-*   `npm run prisma:migrate:dev`: Runs Prisma development migrations (delegates to backend workspace).
-*   `npm run prisma:migrate:deploy`: Runs Prisma deployment migrations (delegates to backend workspace).
-*   `npm run prisma:db:push`: Pushes Prisma schema to the database (delegates to backend workspace, use with caution).
-*   `npm run prisma:studio`: Opens Prisma Studio (delegates to backend workspace).
+- `npm run dev`: Starts both backend and frontend development servers.
+- `npm run dev:backend`: Starts the backend development server.
+- `npm run dev:frontend`: Starts the frontend development server.
+- `npm run build`: Builds both backend and frontend for production.
+- `npm run start`: Starts the backend server (expects a production build).
+- `npm run test`: Runs tests for both backend and frontend.
+- `npm run lint`: Lints both backend and frontend.
+- `npm run setup:dev`: Generates Prisma client and runs development database migrations.
+- `npm run prisma:generate`: Generates Prisma client (delegates to backend workspace).
+- `npm run prisma:migrate:dev`: Runs Prisma development migrations (delegates to backend workspace).
+- `npm run prisma:migrate:deploy`: Runs Prisma deployment migrations (delegates to backend workspace).
+- `npm run prisma:db:push`: Pushes Prisma schema to the database (delegates to backend workspace, use with caution).
+- `npm run prisma:studio`: Opens Prisma Studio (delegates to backend workspace).
 
 Refer to `backend/package.json` and `frontend/package.json` for workspace-specific scripts.
+
+## Docker Development
+
+If you prefer running the project with Docker, a compose file is included. Start everything with:
+
+```bash
+docker-compose up
+```
+
+This command installs dependencies, runs database setup, and launches both the backend and frontend.
+
+The app will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
+
+Copy `.env.example` to `.env` and set your secrets. Docker Compose loads this file automatically, but you can also export variables before running `docker-compose up`.
 
 ## Running in Production Mode (Locally)
 
 To run the application as it would be in a production environment (single server serving all assets):
 
 1.  **Ensure dependencies are installed:**
+
     ```bash
     npm install
     ```
 
 2.  **Build the application:**
     This command builds both the frontend and backend into their respective `dist` folders.
+
     ```bash
     npm run build
     ```
 
 3.  **Set up for production deployment (if applicable):
-**    For a production deployment, you would typically use `prisma:migrate:deploy` instead of `prisma:migrate:dev`. Ensure your `.env` file is configured correctly for the production environment.
-    ```bash
+    ** For a production deployment, you would typically use `prisma:migrate:deploy` instead of `prisma:migrate:dev`. Ensure your `.env` file is configured correctly for the production environment.
+    `bash
     npm run prisma:migrate:deploy
-    ```
+    `
 
 4.  **Start the production server:**
     This command starts the Fastify backend, which will serve the built frontend SPA, handle API requests, and serve project previews.
+
     ```bash
     npm run start
     ```
@@ -114,7 +134,7 @@ This is a monorepo with the following workspaces:
 
 ## Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory (you can copy `.env.example`) with the following variables:
 
 ```
 # Required: Anthropic API key

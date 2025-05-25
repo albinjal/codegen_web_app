@@ -12,11 +12,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
-    "prisma:generate": "npm run generate --prefix prisma",
-    "prisma:migrate:dev": "npm run migrate:dev --prefix prisma",
-    "prisma:migrate:deploy": "npm run migrate:deploy --prefix prisma",
-    "prisma:db:push": "npm run db:push --prefix prisma",
-    "prisma:studio": "npm run studio --prefix prisma"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:db:push": "prisma db push",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",
@@ -38,6 +38,7 @@
     "@vitest/coverage-v8": "^0.34.6",
     "@types/fs-extra": "^11.0.4",
     "eslint": "^9.27.0",
+    "prisma": "^6.7.1",
     "tsx": "^4.5.0",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
