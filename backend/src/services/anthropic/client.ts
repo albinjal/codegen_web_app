@@ -72,8 +72,6 @@ export class AnthropicClient extends EventEmitter {
         toolsXml,
         allFilesContent,
       });
-      console.log(systemPrompt);
-      console.log(apiMessages);
 
       const stream = await this.client.messages.create({
         model: MODEL_CONFIG.model,
