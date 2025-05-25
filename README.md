@@ -1,16 +1,16 @@
 # Russable 🚗💨
+## The billionaire's choice for AI-powered web development. This guy fucks... at coding!
 <div align="center">
   <img src="frontend/assets/welcome.png" alt="Welcome to Russable" />
 </div>
 
-**The billionaire's choice for AI-powered web development. This guy fucks... at coding!**
 
-*"I'm just gonna say it. This guy fucks. Am I right? 'Cause I'm looking at the rest of you guys, and this is the guy in the house doing all the fucking."* - Russ Hanneman, Three Comma Club Member
 
 Welcome to **Russable**, the most exclusive AI-powered website generator in Silicon Valley! Just like how I put radio on the internet and made my billions, Russable puts your ideas on the internet and makes them fucking amazing.
 
 Users can describe what they want to build, and my AI (with my personality, obviously) generates complete websites with modern React, TypeScript, and Tailwind CSS. It's like having a billion-dollar development team in your pocket!
 
+**For non-comedey version of the site, please checkout the non-russ branch.**
 ## 💰 Key Features (Three Comma Club Approved)
 
 - **Conversational Website Generation**: Tell me your vision, I'll make it reality - ROI, baby!
@@ -57,7 +57,7 @@ These instructions will get you a copy of the project up and running faster than
 
     ```bash
     git clone https://github.com/albinjal/codegen_web_app
-    cd russable
+    cd codegen_web_app
     ```
 
 2.  **Set up environment variables:**
@@ -169,3 +169,6 @@ For detailed architecture information, see the [architecture documentation](./pr
 **Remember: This guy fucks... at web development!** 🚗💨💰
 
 *Built with love, money, and a lot of fucking attitude by the Three Comma Club.*
+
+
+*This readme was generated with AI.*
