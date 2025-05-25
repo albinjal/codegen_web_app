@@ -92,30 +92,14 @@ const LandingPage: React.FC = () => {
         <p className="text-2xl text-muted-foreground mb-4">
           "I'm just gonna say it. This guy fucks... at web development!"
         </p>
-        <p className="text-lg text-muted-foreground">
-          Describe your web application and let my AI generate the code for you.
-          It's like putting radio on the internet, but for websites!
-        </p>
-        <a
-          href="https://www.youtube.com/watch?v=wGy5SGTuAGI"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-4 py-2 rounded-lg font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
-          title="Watch Russ explain the Three Comma Club"
-        >
-          💰 THREE COMMA CLUB MEMBER 💰
-        </a>
       </div>
 
+      {/* Create Project Section */}
       <Card className="mb-12 shadow-2xl border-2 border-gradient-to-r from-yellow-400 to-orange-500">
         <CardHeader className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 border-b">
           <CardTitle className="text-3xl bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
             Create Your Billion-Dollar App
           </CardTitle>
-          <CardDescription className="text-lg">
-            Tell me what you want to build and I'll make it happen.
-            ROI, baby! You know what that stands for? <strong>Russable On Internet!</strong>
-          </CardDescription>
         </CardHeader>
         <CardContent className="p-8">
           <Input
@@ -143,6 +127,7 @@ const LandingPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Past Projects Section */}
       <div className="mb-8">
         <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
           Your Portfolio of Success
@@ -204,8 +189,18 @@ const LandingPage: React.FC = () => {
         </div>
       )}
 
+
       {/* Russ Quotes Section */}
       <div className="mt-16 text-center">
+      <a
+          href="https://www.youtube.com/watch?v=wGy5SGTuAGI"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 mb-4 inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-4 py-2 rounded-lg font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
+          title="Watch Russ explain the Three Comma Club"
+        >
+          💰 THREE COMMA CLUB MEMBER 💰
+        </a>
         <Card className="bg-gradient-to-r from-yellow-400/5 to-orange-500/5 border-2 border-yellow-400/30">
           <CardContent className="p-8">
             <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
