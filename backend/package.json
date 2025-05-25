@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend server for the Codegen Web App",
+  "description": "Backend server for Russable - The Three Comma Club's choice for AI development",
   "main": "src/index.ts",
   "type": "module",
   "scripts": {

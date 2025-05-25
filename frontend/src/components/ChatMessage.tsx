@@ -377,12 +377,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     return (
       <div className={cn("mb-4 flex justify-start")}>
         <div className="max-w-3/4 order-2">
-          <div className="flex items-center mb-1">
-            <div className="h-6 w-6 mr-2 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-medium">AI</span>
-            </div>
-            <span className="text-xs text-muted-foreground">{new Date(timestamp).toLocaleTimeString()}</span>
+                  <div className="flex items-center mb-1">
+          <div className="h-8 w-8 mr-2 rounded-full overflow-hidden border-2 border-gradient-to-r from-yellow-400 to-orange-500 bg-gradient-to-r from-yellow-400 to-orange-500">
+            <img
+              src="/assets/russ.png"
+              alt="Russ Hanneman"
+              className="w-full h-full object-cover object-center"
+            />
           </div>
+          <span className="text-xs text-muted-foreground">{new Date(timestamp).toLocaleTimeString()}</span>
+        </div>
           <div className="p-3 rounded-lg bg-muted flex items-center">
             <span className="text-base font-medium text-muted-foreground">AI is thinking</span>
             <LoadingDots />
@@ -403,8 +407,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       )}>
         <div className="flex items-center mb-1">
           {role === 'assistant' && (
-            <div className="h-6 w-6 mr-2 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-medium">AI</span>
+            <div className="h-8 w-8 mr-2 rounded-full overflow-hidden border-2 border-gradient-to-r from-yellow-400 to-orange-500 bg-gradient-to-r from-yellow-400 to-orange-500">
+              <img
+                src="/assets/russ.png"
+                alt="Russ Hanneman"
+                className="w-full h-full object-cover object-center"
+              />
             </div>
           )}
           <span className="text-xs text-muted-foreground">

@@ -14,21 +14,21 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const [currentText, setCurrentText] = useState(0);
 
   const defaultLoadingTexts = [
-    "Analyzing your request...",
-    "Generating code structure...",
-    "Creating components...",
-    "Setting up styling...",
-    "Optimizing performance...",
-    "Almost ready..."
+    "Analyzing your billion-dollar idea...",
+    "Generating code that fucks...",
+    "Creating components like a boss...",
+    "Setting up styling that's flashier than my McLaren...",
+    "Optimizing performance for maximum ROI...",
+    "Almost ready to make you rich!"
   ];
 
   const aiProcessingTexts = [
-    "AI is thinking...",
-    "Processing your request...",
-    "Generating response...",
-    "Crafting the perfect solution...",
-    "Putting finishing touches...",
-    "Ready to deliver!"
+    "This guy's AI is thinking...",
+    "Processing your request like a Three Comma Club member...",
+    "Generating response with billionaire precision...",
+    "Crafting the perfect fucking solution...",
+    "Putting finishing touches on your empire...",
+    "Ready to deliver some serious ROI!"
   ];
 
   const loadingTexts = loadingText ? [loadingText] : (
@@ -60,22 +60,18 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   }, [onLoadingComplete, duration, loadingTexts.length]);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-background via-background/98 to-primary/3 flex items-center justify-center overflow-hidden z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-background via-background/98 to-yellow-400/5 flex items-center justify-center overflow-hidden z-50">
       {/* Main loading content */}
       <div className="relative z-10 text-center space-y-6 max-w-md mx-auto px-6">
-        {/* Animated logo */}
+        {/* Animated logo with Russ style */}
         <div className="relative">
-          <div className="bg-primary text-primary-foreground h-16 w-16 rounded-xl flex items-center justify-center text-2xl font-bold mx-auto animate-pulse-scale shadow-xl">
-            A
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black h-20 w-20 rounded-xl flex items-center justify-center text-3xl font-bold mx-auto animate-pulse-scale shadow-2xl">
+            R
           </div>
-
-          {/* Rotating ring around logo */}
-          <div className="absolute inset-0 border-3 border-primary/20 rounded-xl animate-spin-slow" />
-          <div className="absolute inset-1 border-2 border-primary/10 rounded-lg animate-spin-reverse" />
         </div>
 
         {/* Loading text */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="h-6">
             <p className="text-lg font-medium text-foreground animate-typewriter">
               {loadingTexts[currentText]}
@@ -84,23 +80,27 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
           {!loadingText && (
             <p className="text-sm text-muted-foreground">
-              This may take a moment...
+              Trust me, I know what I'm doing... 💰
             </p>
           )}
         </div>
 
-        {/* Loading dots */}
+        {/* Loading dots with Russ style */}
         <div className="flex justify-center space-x-1">
-          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+
+        {/* Russ quote */}
+        <div className="mt-6 p-4 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-lg border border-yellow-400/20">
+          <p className="text-sm italic text-muted-foreground">
+            "ROI, baby! You know what that stands for? Radio on Internet!"
+          </p>
         </div>
       </div>
 
-      {/* Bottom decoration */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground/40 animate-fade-in-delay-2">
-        Powered by Claude AI
-      </div>
+
     </div>
   );
 };

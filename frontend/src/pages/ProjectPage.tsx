@@ -244,7 +244,10 @@ const ProjectPage: React.FC = () => {
     setPendingMessages(prev => [...prev, userMessage]);
     setNewMessage('');
     setIsAwaitingAssistant(true);
-    setShowAiLoadingScreen(true);
+    // Only show loading screen for the very first message
+    if (allMessages.length <= 1) {
+      setShowAiLoadingScreen(true);
+    }
 
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -255,6 +258,7 @@ const ProjectPage: React.FC = () => {
     } catch (error) {
       setPendingMessages(prev => prev.filter(m => m.id !== userMessage.id));
       setShowAiLoadingScreen(false);
+      setIsAwaitingAssistant(false);
       toast({
         variant: "destructive",
         title: "Message failed",
@@ -459,8 +463,43 @@ const ProjectPage: React.FC = () => {
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p>Preview will appear here once the project is built.</p>
+          <div className="relative flex items-center justify-center h-full bg-gradient-to-br from-background via-background/95 to-yellow-400/5">
+            {/* Tinted overlay with spinner for initial state */}
+            <div className="absolute inset-0 bg-muted/20" />
+
+            <div className="relative z-10 text-center space-y-4">
+              {/* Show spinner and different message if we're waiting for first response */}
+              {allMessages.length <= 1 && (isAwaitingAssistant || assistantStreamingMessage) ? (
+                <>
+                  <div className="relative">
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black h-16 w-16 rounded-xl flex items-center justify-center text-2xl font-bold mx-auto animate-pulse-scale shadow-xl">
+                      R
+                    </div>
+                    <div className="absolute inset-0 border-2 border-yellow-400/30 rounded-xl animate-spin-slow" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-foreground">
+                      Building your billion-dollar app...
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      This guy's AI is working some fucking magic! 🚗💨
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">🏗️</div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-foreground">
+                      Preview Coming Soon
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Your web application will appear here once the AI generates it.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
@@ -481,7 +520,7 @@ const ProjectPage: React.FC = () => {
       {/* AI Loading Screen Overlay */}
       {showAiLoadingScreen && (
         <LoadingScreen
-          loadingText="AI is processing your request..."
+          loadingText="This guy's AI is working some fucking magic..."
         />
       )}
     </>
