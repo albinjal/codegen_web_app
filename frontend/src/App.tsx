@@ -25,7 +25,7 @@ const App: React.FC = () => {
               Projects
             </Link>
             <a
-              href="https://github.com/your-repo/codegen-web-app"
+              href="https://github.com/albinjal/codegen_web_app"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium hover:text-primary transition-colors"
