@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ResizableLayout } from '@/components/ResizableLayout';
+import LoadingScreen from '@/components/LoadingScreen';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ const ProjectPage: React.FC = () => {
   }>({ status: 'idle' });
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isAwaitingAssistant, setIsAwaitingAssistant] = useState(false);
+  const [showAiLoadingScreen, setShowAiLoadingScreen] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -104,6 +106,7 @@ const ProjectPage: React.FC = () => {
             break;
           case 'ai_content':
             setIsAwaitingAssistant(false);
+            setShowAiLoadingScreen(false);
             setAssistantStreamingMessage(prev => ({
               id: prev?.id || `streaming-${Date.now()}`,
               projectId: projectId!,
@@ -114,6 +117,7 @@ const ProjectPage: React.FC = () => {
             break;
           case 'ai_complete':
             setAssistantStreamingMessage(null);
+            setShowAiLoadingScreen(false);
             if (data.message && data.message.content) {
               // Remove from pending if present
               setPendingMessages((pending) =>
@@ -189,6 +193,7 @@ const ProjectPage: React.FC = () => {
           case 'error':
             console.error('SSE Error:', data.error);
             setAssistantStreamingMessage(null);
+            setShowAiLoadingScreen(false);
 
             toast({
               variant: "destructive",
@@ -239,6 +244,7 @@ const ProjectPage: React.FC = () => {
     setPendingMessages(prev => [...prev, userMessage]);
     setNewMessage('');
     setIsAwaitingAssistant(true);
+    setShowAiLoadingScreen(true);
 
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -248,6 +254,7 @@ const ProjectPage: React.FC = () => {
       await sendMessageAndConnectSse(projectId, userMessage.content);
     } catch (error) {
       setPendingMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      setShowAiLoadingScreen(false);
       toast({
         variant: "destructive",
         title: "Message failed",
@@ -461,14 +468,23 @@ const ProjectPage: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-100px)]">
-      <ResizableLayout
-        leftPanel={chatPanel}
-        rightPanel={previewPanel}
-        defaultLeftSize={40}
-        defaultRightSize={60}
-      />
-    </div>
+    <>
+      <div className="container mx-auto p-4 h-[calc(100vh-100px)]">
+        <ResizableLayout
+          leftPanel={chatPanel}
+          rightPanel={previewPanel}
+          defaultLeftSize={40}
+          defaultRightSize={60}
+        />
+      </div>
+
+      {/* AI Loading Screen Overlay */}
+      {showAiLoadingScreen && (
+        <LoadingScreen
+          loadingText="AI is processing your request..."
+        />
+      )}
+    </>
   );
 };
 

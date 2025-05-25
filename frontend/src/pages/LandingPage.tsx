@@ -16,21 +16,13 @@ import {
 } from "@/components/ui/card"; // Corrected import path
 import { Input } from "@/components/ui/input"; // Corrected import path
 import { Spinner } from "@/components/ui/spinner";
-
-// Creation steps with descriptions for visual feedback
-const CREATION_STEPS = [
-  { id: "initializing", label: "Initializing project..." },
-  { id: "analyzing", label: "Analyzing requirements..." },
-  { id: "generating", label: "Generating code structure..." },
-  { id: "finalizing", label: "Preparing your project..." },
-];
+import LoadingScreen from "@/components/LoadingScreen";
 
 const LandingPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [initialPrompt, setInitialPrompt] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
-  const [creationStep, setCreationStep] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,16 +40,7 @@ const LandingPage: React.FC = () => {
     fetchProjects();
   }, []);
 
-  // Effect to simulate progress through creation steps
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    if (isCreatingProject && creationStep < CREATION_STEPS.length - 1) {
-      timeout = setTimeout(() => {
-        setCreationStep((prev) => prev + 1);
-      }, 3000); // Advance to next step every 1.2 seconds for the visual effect
-    }
-    return () => clearTimeout(timeout);
-  }, [isCreatingProject, creationStep]);
+
 
   const handleCreateProject = async () => {
     if (!initialPrompt.trim()) {
@@ -65,7 +48,6 @@ const LandingPage: React.FC = () => {
       return;
     }
     setIsCreatingProject(true);
-    setCreationStep(0); // Reset to first step
 
     try {
       // The createProjectAndConnectSse in ApiService is a bit of a placeholder for how SSE is established.
@@ -78,10 +60,20 @@ const LandingPage: React.FC = () => {
       navigate(`/project/${projectId}`);
     } catch (error) {
       console.error("Failed to create project:", error);
+      setIsCreatingProject(false);
       // TODO: Show error to user
     }
-    setIsCreatingProject(false);
   };
+
+  // Show loading screen overlay when creating project
+  if (isCreatingProject) {
+    return (
+      <LoadingScreen
+        loadingText="Creating your project..."
+        duration={12000} // 12 seconds for project creation
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl">
@@ -117,39 +109,14 @@ const LandingPage: React.FC = () => {
             }}
           />
 
-          {isCreatingProject ? (
-            <div className="space-y-4 py-2">
-              <div className="flex items-center space-x-2">
-                <Spinner size="md" className="text-primary" />
-                <div className="flex-1">
-                  <p className="font-medium">
-                    {CREATION_STEPS[creationStep].label}
-                  </p>
-                  <div className="w-full bg-muted h-2 rounded-full mt-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
-                      style={{
-                        width: `${((creationStep + 1) / CREATION_STEPS.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground italic">
-                This may take a minute. We're analyzing your requirements and
-                crafting the perfect codebase.
-              </p>
-            </div>
-          ) : (
-            <Button
-              onClick={handleCreateProject}
-              disabled={isCreatingProject || !initialPrompt.trim()}
-              className="w-full py-6 text-lg"
-              size="lg"
-            >
-              Start Generating
-            </Button>
-          )}
+          <Button
+            onClick={handleCreateProject}
+            disabled={isCreatingProject || !initialPrompt.trim()}
+            className="w-full py-6 text-lg"
+            size="lg"
+          >
+            Start Generating
+          </Button>
         </CardContent>
       </Card>
 
