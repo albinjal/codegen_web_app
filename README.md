@@ -1,6 +1,32 @@
 # Codegen Web App
 
-A web application that allows users to generate websites using AI.
+**An AI-powered website generator that creates fully functional React applications through natural language conversation.**
+
+Users can describe what they want to build, and the AI generates complete websites with modern React, TypeScript, and Tailwind CSS. The application features real-time preview, intelligent code editing, and seamless project management.
+
+## ✨ Key Features
+
+- **Conversational Website Generation**: Describe your vision in plain English, get a working website
+- **Real-time Preview**: See your website update instantly as the AI makes changes
+- **Intelligent Code Editing**: AI understands context and makes precise modifications using advanced tool parsing
+- **Modern Tech Stack**: Built with React, TypeScript, Tailwind CSS, and Vite
+- **Project Management**: Save, revisit, and continue working on multiple projects
+- **Streaming Responses**: Real-time AI responses using Server-Sent Events (SSE)
+- **Production Ready**: Modular architecture with comprehensive testing and Docker support
+
+## 🏗️ Technical Overview
+
+This application demonstrates sophisticated full-stack development with:
+
+- **Modular Backend Architecture**: Clean separation of concerns with feature modules, services, and controllers
+- **AI Integration**: Advanced XML tool parsing for intelligent code generation and modification
+- **Real-time Communication**: Server-Sent Events for streaming AI responses and build notifications
+- **Workspace Management**: Dynamic project creation, building, and serving with security controls
+- **Database Design**: Efficient data modeling with Prisma ORM and SQLite
+- **Development Experience**: Hot reloading, TypeScript throughout, comprehensive testing with Vitest
+- **Deployment Options**: Both npm and Docker workflows with production optimization
+
+For detailed technical documentation, see [`project_description/architecture.md`](./project_description/architecture.md).
 
 ## Getting Started
 
@@ -74,93 +100,56 @@ These instructions will get you a copy of the project up and running on your loc
 
     The app will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
 
-## Available Scripts
 
-From the root directory:
+## 📁 Project Structure
 
-- `npm run dev`: Starts both backend and frontend development servers.
-- `npm run dev:backend`: Starts the backend development server.
-- `npm run dev:frontend`: Starts the frontend development server.
-- `npm run build`: Builds both backend and frontend for production.
-- `npm run start`: Starts the backend server (expects a production build).
-- `npm run test`: Runs tests for both backend and frontend.
-- `npm run lint`: Lints both backend and frontend.
-- `npm run setup:dev`: Generates Prisma client and runs development database migrations.
-- `npm run prisma:generate`: Generates Prisma client (delegates to backend workspace).
-- `npm run prisma:migrate:dev`: Runs Prisma development migrations (delegates to backend workspace).
-- `npm run prisma:migrate:deploy`: Runs Prisma deployment migrations (delegates to backend workspace).
-- `npm run prisma:db:push`: Pushes Prisma schema to the database (delegates to backend workspace, use with caution).
-- `npm run prisma:studio`: Opens Prisma Studio (delegates to backend workspace).
+This is a professionally organized monorepo using npm workspaces:
 
-Refer to `backend/package.json` and `frontend/package.json` for workspace-specific scripts.
+```
+codegen_web_app/
+├── backend/                 # Fastify TypeScript server
+│   ├── src/
+│   │   ├── config/         # Environment & configuration
+│   │   ├── core/           # Server & database core
+│   │   ├── modules/        # Feature modules (health, projects)
+│   │   ├── routes/         # Route registration
+│   │   └── services/       # AI integration & build services
+│   ├── template/           # React template for new projects
+│   └── workspace/          # Generated user projects (runtime)
+├── frontend/               # React SPA with modern tooling
+│   └── src/
+│       ├── components/     # shadcn/ui components
+│       ├── hooks/          # Custom React hooks
+│       ├── lib/            # Utilities
+│       └── pages/          # Landing & Project pages
+├── prisma/                 # Database schema & migrations
+└── project_description/    # Comprehensive documentation
+```
 
-## Additional Docker Commands
+**Key Design Decisions:**
+- **Monorepo**: Simplified dependency management and deployment
+- **TypeScript Throughout**: Type safety across the entire stack
+- **Modular Architecture**: Each feature is self-contained with clear boundaries
+- **Workspace Isolation**: User projects are sandboxed and securely managed
 
-For Docker development, you can use these additional commands:
+## 🚀 Current Status
 
-- `docker-compose up -d`: Run in detached mode (background)
-- `docker-compose down`: Stop and remove containers
-- `docker-compose logs`: View logs from all services
-- `docker-compose logs [service-name]`: View logs from a specific service
+**✅ Fully Functional MVP Complete**
 
-Docker Compose automatically loads the `.env` file, but you can also export variables before running `docker-compose up`.
+All core features have been implemented and tested:
 
-## Running in Production Mode (Locally)
+- ✅ **AI Website Generation**: Complete integration with Anthropic's Claude API
+- ✅ **Real-time Streaming**: Server-Sent Events for live AI responses
+- ✅ **Project Management**: Full CRUD operations with database persistence
+- ✅ **Code Editing**: Advanced XML tool parsing for file creation and modification
+- ✅ **Live Preview**: Automatic building and serving of generated websites
+- ✅ **Modern UI**: Responsive design with shadcn/ui components
+- ✅ **Development Workflow**: Hot reloading, TypeScript, testing with Vitest
+- ✅ **Production Ready**: Docker support and optimized builds
+- ✅ **Documentation**: Comprehensive architecture and implementation docs
 
-To run the application as it would be in a production environment (single server serving all assets):
+The application is ready for demonstration and further development.
 
-1.  **Ensure dependencies are installed:**
-
-    ```bash
-    npm install
-    ```
-
-2.  **Build the application:**
-    This command builds both the frontend and backend into their respective `dist` folders.
-
-    ```bash
-    npm run build
-    ```
-
-3.  **Set up for production deployment (if applicable):
-    ** For a production deployment, you would typically use `prisma:migrate:deploy` instead of `prisma:migrate:dev`. Ensure your `.env` file is configured correctly for the production environment.
-    `bash
-    npm run prisma:migrate:deploy
-    `
-
-4.  **Start the production server:**
-    This command starts the Fastify backend, which will serve the built frontend SPA, handle API requests, and serve project previews.
-
-    ```bash
-    npm run start
-    ```
-
-5.  **Access the application:**
-    Open your browser and navigate to `http://localhost:3000`.
-
-## Project Structure
-
-This is a monorepo with the following workspaces:
-
-- `backend`: Fastify server handling API requests and preview serving
-  - `src`: Source code with modular architecture
-    - `config`: Environment configuration
-    - `core`: Core server and database infrastructure
-    - `modules`: Feature modules (health, projects) with controller-route pattern
-    - `routes`: Route registration
-    - `services`: External integrations (anthropic AI, build service)
-  - `template`: React template used for new projects
-  - `workspace`: Runtime storage for user-generated projects
-- `frontend`: React SPA using Vite, Tailwind, and shadcn/ui
-  - `src`: Frontend source code
-    - `components`: Reusable UI components (shadcn/ui)
-    - `hooks`: Custom React hooks
-    - `lib`: Utility libraries
-    - `pages`: Page components (LandingPage, ProjectPage)
-- `prisma`: Database models and migrations
-
-
-
-## Architecture
+## 📚 Architecture
 
 For detailed architecture information, see the [architecture documentation](./project_description/architecture.md).

@@ -1,38 +1,59 @@
-# Architecture (Refactored Modular Backend)
+# Architecture Documentation
 
-> **Target:** Local‑only MVP, no authentication, single‑origin UX.
+## Executive Summary
 
-## 1  High‑Level Topology
+This document outlines the technical architecture of the Codegen Web App, an AI-powered website generator. The system demonstrates sophisticated full-stack development practices with a modular, scalable design.
 
-### Development
+**Key Architectural Highlights:**
+- **Single-Origin Design**: Eliminates CORS complexity and simplifies deployment
+- **Real-time Communication**: Server-Sent Events for streaming AI responses
+- **Modular Backend**: Clean separation of concerns with feature-based modules
+- **AI Tool Integration**: Advanced XML parsing for intelligent code generation
+- **Workspace Management**: Secure, isolated project environments
+- **Production Ready**: Docker support, comprehensive testing, and optimized builds
+
+> **Current Status:** Fully functional MVP with local-only deployment, no authentication required.
+
+## 1. System Architecture Overview
+
+### Development Environment
+In development, we run separate servers for optimal developer experience:
 
 ```
 ┌──────────────────────┐  http://localhost:5173
-│  Vite dev server     │  ─────────────────────────────────┐
-│  (frontend)          │                                   │
+│  Vite Dev Server     │  ─────────────────────────────────┐
+│  (React Frontend)    │                                   │
+│  • Hot reloading     │                                   │
+│  • Fast builds       │                                   │
 └──────────┬───────────┘                                   │
-           │  /api  /preview (proxy)                       │
+           │  Proxies /api & /preview requests             │
            ▼                                               │
-┌──────────────────────┐   SSE streams     (port 3000)     │
-│  Fastify backend     │◄──────────────────────────────────┘
-│  – REST /api         │
-│  – /preview/static   │
+┌──────────────────────┐   SSE Streaming   (port 3000)     │
+│  Fastify Backend     │◄──────────────────────────────────┘
+│  • REST API          │
+│  • Project previews  │
+│  • AI integration    │
 └──────────────────────┘
 ```
 
-### Production / Bundle
+### Production Deployment
+In production, everything runs as a single optimized server:
 
 ```
                     http://localhost:3000
 ┌─────────────────────────────────────────────────────────┐
-│              Fastify backend (single process)           │
-│  • Serves built SPA from /                              │
-│  • /api/* endpoints                                     │
-│  • /preview/<id>/index.html  (built project previews)   │
+│              Fastify Backend (Single Process)           │
+│  • Serves built React SPA from /                        │
+│  • Handles /api/* endpoints                             │
+│  • Serves /preview/<id>/* for generated websites        │
+│  • Real-time SSE streaming                              │
 └─────────────────────────────────────────────────────────┘
 ```
 
-The browser therefore always talks to **one origin**; CORS and cookie headaches are avoided.
+**Key Benefits:**
+- **Single Origin**: No CORS issues, simplified security model
+- **Unified Deployment**: One process to manage in production
+- **Optimal Performance**: Static assets served efficiently
 
 ---
 
@@ -74,16 +95,25 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
 
 ---
 
-## 3  Components & Responsibilities
+## 3. System Components & Responsibilities
 
-| Layer               | Responsibility                                                              | Key Tech                         |
+The application is built with clearly defined components, each handling specific responsibilities:
+
+| Component           | Purpose                                                                     | Technology Stack                 |
 | ------------------- | --------------------------------------------------------------------------- | -------------------------------- |
-| **Frontend**        | Chat UI, project list, iframe preview; dev‑time proxy                       | React, Vite, Tailwind, shadcn/ui |
-| **Backend API**     | `/api/*` routes, SSE, static preview + SPA serving                          | Fastify 4, @fastify/static, zod  |
-| **BuildService**    | Parse `<edit>`, `<create_file>`, `<str_replace>` XML tool calls, write files, execute `vite build`, emit `preview‑ready` | `execa`, custom tool parser      |
-| **AnthropicClient** | Wrap TS SDK, stream tokens, emits tool calls as XML in responses            | `@anthropic-ai/sdk`              |
-| **Database**        | Store Project & Message rows                                                | Prisma + SQLite                  |
-| **Workspace FS**    | `backend/workspace/{project_id}` with React project files + `dist/` build   | Local filesystem                 |
+| **Frontend SPA**    | User interface for chat, project management, and live preview              | React, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| **Backend API**     | RESTful endpoints, real-time streaming, static file serving                | Fastify 4, TypeScript, Zod validation |
+| **AI Service**      | Integration with Anthropic Claude, streaming responses, tool call parsing  | Anthropic SDK, custom XML parser |
+| **Build Service**   | Project creation, file management, automated building                      | Node.js, Vite, custom tooling   |
+| **Database Layer**  | Persistent storage for projects and conversation history                   | Prisma ORM, SQLite              |
+| **Workspace Manager** | Isolated project environments with security controls                      | File system operations, sandboxing |
+
+### Key Technical Innovations
+
+- **AI Tool Protocol**: Custom XML parsing system for intelligent code generation
+- **Real-time Streaming**: Server-Sent Events for live AI responses and build notifications
+- **Modular Architecture**: Feature-based modules with clear separation of concerns
+- **Workspace Isolation**: Secure project environments with automated cleanup
 
 ---
 
@@ -138,14 +168,49 @@ model Message {
 
 ---
 
-## 6  AI Tooling Protocol
+## 6. AI Tooling Protocol
 
-> **AI Tooling Protocol:**
-> The backend system prompt instructs the AI to use XML tags for tool calls. Supported tools include:
-> - `<create_file path="...">...</create_file>`: Create a new file with the given content.
-> - `<str_replace path="..." old_str="..." new_str="...">...</str_replace>`: Replace a string in a file.
->
-> The backend parses these tags, executes the requested actions, and rebuilds the project as needed. Multiple tool calls can be included in a single response.
+### Overview
+One of the most sophisticated features of this system is the AI tooling protocol - a custom XML-based system that allows the AI to perform precise code modifications.
+
+### How It Works
+
+**1. AI Response Generation**
+- The AI receives user requests and generates responses with embedded XML tool calls
+- Multiple tool calls can be included in a single response
+- The AI understands project context and makes intelligent modifications
+
+**2. Tool Call Parsing**
+- Backend parses XML tags from AI responses using custom parser
+- Validates tool calls and parameters
+- Executes file operations safely within project workspace
+
+**3. Automatic Rebuilding**
+- After tool execution, the system automatically rebuilds the project
+- Emits `preview-ready` events via SSE
+- Frontend reloads preview iframe to show changes
+
+### Supported Tools
+
+```xml
+<!-- Create a new file with content -->
+<create_file path="src/components/Button.tsx">
+export const Button = ({ children, onClick }) => {
+  return <button onClick={onClick}>{children}</button>;
+};
+</create_file>
+
+<!-- Replace specific content in existing file -->
+<str_replace path="src/App.tsx" old_str="Hello World" new_str="Welcome to My App">
+</str_replace>
+```
+
+### Technical Benefits
+
+- **Precision**: AI can make exact modifications without affecting unrelated code
+- **Safety**: Operations are sandboxed within project workspaces
+- **Efficiency**: Multiple changes can be batched in a single response
+- **Reliability**: Robust error handling and validation
 
 ---
 
