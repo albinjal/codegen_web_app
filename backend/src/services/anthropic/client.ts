@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import { env } from '../../config/env.js';
 import { getProjectFileTree, getAllSrcFilesContent } from '../build/fileTreeUtil.js';
 import { generateToolsXml } from '../build/toolConfig.js';
-import { generateSystemPrompt } from '../../utils/systemPrompt.js';
+import { generateSystemPrompt } from './systemPrompt.js';
 
 // Define model configuration based on environment
 const MODEL_CONFIG = {
