@@ -2,8 +2,6 @@
 
 > **Target:** Local‑only MVP, no authentication, single‑origin UX.
 
----
-
 ## 1  High‑Level Topology
 
 ### Development
@@ -50,15 +48,22 @@ The browser therefore always talks to **one origin**; CORS and cookie headaches 
       📁 projects/        # Project management module
     📁 routes/            # Route registration
     📁 services/          # Core services
-      📁 anthropic/       # AI service integration
+      📁 anthropic/       # AI service integration (includes systemPrompt)
       📁 build/           # Project build and file management
-    📁 utils/             # Shared utility functions
+    📄 types.ts           # Shared TypeScript type definitions
+    📄 index.ts           # Server entry point
   📁 template/            # React template for new projects
   📁 workspace/           # Generated project workspaces
-  📄 index.ts             # Server entry point
   📄 package.json         # Backend dependencies
 
 📁 frontend/              # Frontend React application
+  📁 src/
+    📁 components/        # Reusable UI components (shadcn/ui)
+    📁 hooks/             # Custom React hooks
+    📁 lib/               # Utility libraries
+    📁 pages/             # Page components (LandingPage, ProjectPage)
+    📄 App.tsx            # Main application component
+    📄 main.tsx           # Application entry point
   📄 package.json         # Frontend dependencies
 
 📁 prisma/                # Database schema and client
@@ -163,3 +168,40 @@ model Message {
 Each feature module follows this structure:
 
 ```
+📁 modules/
+  📁 health/
+    📄 controller.ts    # Business logic and request handlers
+    📄 route.ts         # Route definitions and validation
+    📄 index.ts         # Module exports
+  📁 projects/
+    📄 controller.ts    # Business logic and request handlers
+    📄 route.ts         # Route definitions and validation
+    📄 schema.ts        # Zod validation schemas
+    📄 index.ts         # Module exports
+    📁 __tests__/       # Module-specific tests
+```
+
+### Service Structure
+
+Services are organized by domain and include:
+
+```
+📁 services/
+  📁 anthropic/
+    📄 client.ts        # Anthropic API client wrapper
+    📄 systemPrompt.ts  # AI system prompt generation
+    📄 index.ts         # Service exports
+    📁 __tests__/       # Service tests
+  📁 build/
+    📄 service.ts       # Main build service
+    📄 fileTreeUtil.ts  # File system utilities
+    📄 toolConfig.ts    # Tool configuration
+    📄 toolParser.ts    # XML tool parsing
+    📄 index.ts         # Service exports
+```
+
+This modular structure provides:
+- **Clear separation of concerns**: Each module handles a specific domain
+- **Consistent patterns**: All modules follow the same structure
+- **Easy testing**: Each module can be tested independently
+- **Maintainability**: Related functionality is co-located

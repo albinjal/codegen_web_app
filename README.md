@@ -2,6 +2,8 @@
 
 A web application that allows users to generate websites using AI.
 
+> **Status**: Core functionality implemented. The application includes a working backend API, frontend interface, AI integration, and project build system. Ready for development and testing.
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
@@ -95,9 +97,19 @@ This is a monorepo with the following workspaces:
 
 - `backend`: Fastify server handling API requests and preview serving
   - `src`: Source code with modular architecture
+    - `config`: Environment configuration
+    - `core`: Core server and database infrastructure
+    - `modules`: Feature modules (health, projects) with controller-route pattern
+    - `routes`: Route registration
+    - `services`: External integrations (anthropic AI, build service)
   - `template`: React template used for new projects
   - `workspace`: Runtime storage for user-generated projects
 - `frontend`: React SPA using Vite, Tailwind, and shadcn/ui
+  - `src`: Frontend source code
+    - `components`: Reusable UI components (shadcn/ui)
+    - `hooks`: Custom React hooks
+    - `lib`: Utility libraries
+    - `pages`: Page components (LandingPage, ProjectPage)
 - `prisma`: Database models and migrations
 
 ## Environment Variables
@@ -116,11 +128,3 @@ CLAUDE_MODEL=claude-3-5-sonnet-20240620
 ## Architecture
 
 For detailed architecture information, see the [architecture documentation](./project_description/architecture.md).
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.

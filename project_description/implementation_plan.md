@@ -38,11 +38,11 @@
   - [x] Implement `AnthropicClient` wrapping the Typescript SDK and centralize model configuration.
   - [x] Stream assistant tokens over SSE to the frontend.
 
-- [ ] **Frontend SPA**
+- [x] **Frontend SPA**
 
-  - [ ] Set up a React/Vite project in `frontend/` using Tailwind and shadcn/ui (as per design decisions).
-  - [ ] Provide a landing page with chat input and project list; embed preview iframe pointing at `/preview/{id}/index.html`.
-  - [ ] Use fetch and `EventSource` to interact with the backend API and stream responses.
+  - [x] Set up a React/Vite project in `frontend/` using Tailwind and shadcn/ui (as per design decisions).
+  - [x] Provide a landing page with chat input and project list; embed preview iframe pointing at `/preview/{id}/index.html`.
+  - [x] Use fetch and `EventSource` to interact with the backend API and stream responses.
 
 - [x] **Database & API Flow**
 
@@ -76,6 +76,8 @@
   - [x] Organize endpoints into feature modules (health, projects).
   - [x] Move services into dedicated directories with proper structure.
   - [x] Update tests to work with new module structure.
+  - [x] Refactor utils directory: moved systemPrompt.ts to anthropic service for better domain organization.
+  - [x] Remove empty utils directory to maintain clean codebase structure.
 
 - [x] **Testing & Pre‑commit Setup**
 
