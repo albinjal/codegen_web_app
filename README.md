@@ -1,5 +1,5 @@
 # Russable 🚗💨
-## The billionaire's choice for AI-powered web development. This guy fucks... at coding!
+## The billionaire's choice for AI-powered web development
 <div align="center">
   <img src="frontend/assets/welcome.png" alt="Welcome to Russable" />
 </div>
