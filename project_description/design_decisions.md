@@ -12,7 +12,6 @@ I wanted to note down some of the decisions I made along the way and why.
 
 
 ## Frontend
-I will just use the lovable stack. As I don't have a strong preference and LLM's are good at generating in it.
 - [x] React
 - [x] Tailwind CSS
 - [x] Shadcn UI
@@ -35,11 +34,6 @@ I will just use the lovable stack. As I don't have a strong preference and LLM's
 
 
 ## Addtional Features
-- [ ] Give chatbot a funny personality or let the user choose. Example Russ Hanneman from Silicon Valley.
+- [x] Give chatbot a funny personality or let the user choose. Example Russ Hanneman from Silicon Valley.
 - [ ] Adding a spin the wheel feature if the user gives ambiguous instructions (they get a random choice).
 - [ ] Integrating into an existing chat application. What if we could just message a whatsapp number/telegram bot with a website prompt and it send us back a link with the preview? Would be pretty cool.
-
-
-Removed:
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
