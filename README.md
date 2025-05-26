@@ -137,7 +137,6 @@ russable/
 │       ├── hooks/          # Custom React hooks (reusable like my pickup lines)
 │       ├── lib/            # Utilities (tools for success)
 │       └── pages/          # Landing & Project pages (the user experience)
-├── prisma/                 # Database schema & migrations (data organization)
 └── project_description/    # Comprehensive documentation (the manual for billions)
 ```
 
