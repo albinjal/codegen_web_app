@@ -10,7 +10,7 @@ Welcome to **Russable**, the most exclusive AI-powered website generator in Sili
 
 Users can describe what they want to build, and my AI (with my personality, obviously) generates complete websites with modern React, TypeScript, and Tailwind CSS. It's like having a billion-dollar development team in your pocket!
 
-**For non-comedey version of the site, please checkout the non-russ branch.**
+**For a non-comedy version of the project, please checkout the non-russ branch.**
 
 
 ## 🎥 Mini Demo
